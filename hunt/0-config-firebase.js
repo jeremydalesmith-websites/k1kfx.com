@@ -4,13 +4,12 @@
 //  A web apiKey is NOT a secret; keep every quote and the closing "};".
 // ============================================================
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY_VALUE",
-  authDomain:        "YOUR_AUTHDOMAIN_VALUE",
-  projectId:         "YOUR_PROJECTID_VALUE",
-  storageBucket:     "YOUR_STORAGEBUCKET_VALUE",
-  messagingSenderId: "YOUR_MESSAGINGSENDERID_VALUE",
-  appId:             "YOUR_APPID_VALUE"
-  // measurementId is optional (Google Analytics only) — omit if unused.
+  apiKey: "AIzaSyA9WCvAZZoAjfwXML6d3xmbhzymznhhLe4",
+  authDomain: "k1kfx-foxhunt.firebaseapp.com",
+  projectId: "k1kfx-foxhunt",
+  storageBucket: "k1kfx-foxhunt.firebasestorage.app",
+  messagingSenderId: "809340851296",
+  appId: "1:809340851296:web:a4b7fb26985ac3aaf9df05"
 };
 (function () {
   var unfilled = Object.keys(firebaseConfig).filter(function (k) {
