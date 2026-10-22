@@ -167,8 +167,8 @@ const FOXHUNT_CONFIG = {
   // on the admin page. Leave blank to hide the link entirely.
   mapDownloadUrl: "https://foxpursuit.com/maps/",
 
-  tileUrl: "maps/springfield-branson.pmtiles",
-
+  tileUrl: "https://maps.foxpursuit.com/USA-NE_ESE.pmtiles",
+  
   // Offline map areas offered to the user, as a RADIUS in the app's `units`
   // (set below). Give 1, 2 or 3 CLEAN values. A single value skips the choice
   // and just downloads that size. Values are clamped to 5-160.
