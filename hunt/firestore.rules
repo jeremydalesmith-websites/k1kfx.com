@@ -15,7 +15,7 @@ service cloud.firestore {
     // This one list is the only place to edit when adding/removing admins.
     function isAdmin() {
       return request.auth != null &&
-             request.auth.uid in ['YOUR_ADMIN_UID'];
+             request.auth.uid in ['GHT6lUtECLU12YbIbHegItfWk0T2'];
     }
 
     // ── User profiles (only used when persistUsernames: true) ──
