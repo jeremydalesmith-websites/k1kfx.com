@@ -26,7 +26,7 @@
 // ============================================================
 
 const ADMIN_UIDS = [
-  'REPLACE_WITH_YOUR_ADMIN_UID'
+  'GHT6lUtECLU12YbIbHegItfWk0T2'
 ];
 
 let _adminApp = null;
