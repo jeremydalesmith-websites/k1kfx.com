@@ -144,7 +144,7 @@ const FOXHUNT_CONFIG = {
   // downloading, extracting, or self-hosting required. To use YOUR region, open
   // the coverage map (mapDownloadUrl, below), find your area, and set tileUrl to
   // that region's address, for example:
-  //     tileUrl: "https://maps.foxpursuit.com/USA-MO_SSW.pmtiles"
+  //     tileUrl: "https://maps.foxpursuit.com/USA-NE_ESE.pmtiles"
   // See SETUP.txt Section 2 for the short walkthrough.
   //
   // Ships pointed at the small bundled sample in maps/ (Southwest Missouri) so the
