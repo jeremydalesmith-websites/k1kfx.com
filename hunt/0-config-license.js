@@ -31,4 +31,4 @@
 // ============================================================
 
 // ── REPLACE THIS ENTIRE LINE with the one setup.html gives you ──
-const FOXHUNT_SITE_KEY = "PASTE_YOUR_SITE_KEY";
+const FOXHUNT_SITE_KEY = "const FOXHUNT_SITE_KEY = "FP1.eyJpZCI6IkZQLTAwMDYxIiwiY3MiOiJSZWdpc3RlcmVkIFVzZXIiLCJkdCI6IjIwMjYtMTAtMDEiLCJlZCI6InRlYW0ifQ.FkhRE4foIq69SX-c2dByNx3hcYZW8nb1n6pKEhPj9CLNc9rtfRu5peKjmLDSFPwtDCDmCb14ku5pdAo6V7-HNg";";
