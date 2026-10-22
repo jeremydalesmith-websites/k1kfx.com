@@ -1,0 +1,25 @@
+FOX PURSUIT - START HERE
+========================
+
+1. Unzip everything in this package into one folder, keeping the
+   structure as it is (including the maps folder).
+
+2. Open SETUP.txt in Notepad, or any plain-text editor. It is the
+   complete guide, and it assumes no prior knowledge.
+
+3. Allow about an hour and a half. Most of that is creating a free
+   Firebase project; the app's own configuration takes ten minutes.
+
+
+WHAT IS IN HERE
+  SETUP.txt              the guide - read this first
+  0-config-*.js          the four files you personalize (Section 4)
+  everything else        the app itself - do not edit
+
+
+BEFORE YOU START you will need somewhere to publish the files - any
+web host that serves HTTPS, or Firebase's free hosting - and a free
+Google account. SETUP.txt Section 1 covers both, and helps you choose.
+
+
+Questions: WA0MCS on QRZ - https://www.qrz.com/db/WA0MCS

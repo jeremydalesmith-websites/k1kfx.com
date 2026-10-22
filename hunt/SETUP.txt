@@ -1,0 +1,1300 @@
+============================================================
+ FOX PURSUIT - SETUP & ADMIN GUIDE
+ Ham Radio Direction Finding (ARDF)
+ Web Application - Hosted Multi-User Edition
+============================================================
+
+IMPORTANT
+------------
+READ AHEAD BEFORE SUBMITTING AN ENTRY.  Do not read an instruction line then press the submit/next/continue button without first reading the entire section.  Often the next instruction has additional entries or actions you need to understand or think through before making a submission.  With some steps the action cannot be reversed without deleting your entire project and starting over. Read the instructions carefully and read through each section completely before taking any action.
+
+WHAT THIS IS
+------------
+A web application (app) for running a "fox hunt" (amateur radio direction finding). It is a fox-hunt site your club hosts: every member hunts from their own phone, alone in a hunt of their own or together with others in a group hunt whose bearings land on one shared map. A club event may have one, a few, or many hunts running at once. Each participant enters their location and the bearing toward the strongest signal; the bearing lines converge on the hidden transmitter. It works on phones, tablets, and computers, runs offline once loaded, and is configured by editing plain-text files - no programming required.
+
+You host it on your own web space (or on Google's free Firebase Hosting), backed by your own free Google Firebase project. Participants join with just a handle - no accounts, no passwords.  The application is designed to protect user anonymity. You, the host, get a private admin login for the admin panel and the analytics dashboard.
+
+
+HOW TO READ THIS GUIDE
+----------------------
+Work straight through Sections 1 through 8 in order. They are arranged so that you never have to jump ahead and return to any section.
+
+  Section 1   Before you begin - what you need and choosing your hosting path (Path A or Path B).
+  Section 2   Create your map - the map file the app needs.      (both A and B paths)
+  Section 3   Set up your Firebase project.                      (both A and B paths)
+  Section 4   Configure the four files you own.                  (both A and B paths)
+  Section 5   Publish the Firestore security rules.              (both A and B paths)
+  Section 6   Publish your site - PATH A: your own web host.     (Path A only)
+  Section 7   Publish your site - PATH B: free Firebase Hosting. (Path B only)
+  Section 8   First-run check.                                   (both A and B paths)
+
+Once you are up and running, the following sections are reference material you can read as needed.  The material applies to both A and B paths.
+
+  Section 9   Configuring the site to your liking (0-config-foxhunt.js) - branding, content, behavior.
+  Section 10  Admin guide - the admin login, adding admins, the admin panel, analytics.
+  Section 11  Updating to a newer build. READ THIS BEFORE YOU UPDATE.
+  Section 12  Security rules reference.
+  Section 13  Indexing, robots.txt, directory listings.
+  Section 14  License / activation.
+  Section 15  Troubleshooting.
+  Section 16  Quick reference.
+
+In Section 6 (Path A) and Section 7 (Path B) you follow ONE section, not both. Everything before and after applies to both paths. Where a later section differs by path, it says so explicitly.
+
+
+CONVENTIONS
+-----------
+Replace anything shown in <ANGLE BRACKETS>, or written as YOUR_SOMETHING, with your own value.  When replacing the <ANGLE BRACKETS>, you will replace the < and > symbols as well.  When replacing the YOUR_SOMETHING, you replace only the words (not any surrounding text or quote marks).
+
+Menu paths are written like this: Firebase Console > Firestore Database > Rules.
+
+GOOGLE REARRANGES THE FIREBASE CONSOLE FROM TIME TO TIME by changing menu names, the order of steps, and menu paths. This guide may not match what you see. The instructions here should still give you enough to recognize the right choice. Where a wording change is likely, this guide says what the step is FOR, so you can find its equivalent. Two things always work:
+  - the "Search for products" box at the top of the console's left menu; or
+  - the direct URL address, shown wherever this guide gives one.
+If a page looks half-drawn or a button is missing, open the same address in a NEW TAB, or press CTRL+F5. That is a console quirk, not a problem with your project.
+
+
+============================================================
+ SECTION 1 - BEFORE YOU BEGIN
+============================================================
+
+1.1  WHAT YOU NEED
+------------------
+1.1.1  A free Google Firebase project. This provides participant sign-in, the shared hunt data, your admin login, and anonymous usage analytics. It is required on BOTH hosting paths.
+
+1.1.2  Somewhere to serve the files. Either your own static web hosting (cPanel File Manager, FTP, or similar - no server-side programming is needed), or Google's free Firebase Hosting. See Section 1.2.
+
+1.1.3  HTTPS. This is not optional. The app uses GPS, the compass, and offline caching, and browsers only permit those on a secure (https://) address. On plain http:// the map and compass will not work. Firebase Hosting provides HTTPS automatically; on your own host you must have it enabled.
+
+1.1.4  A plain-text editor for four small configuration files (Notepad is fine; so is any code editor). You will change values inside quotation marks. You will not write any code.
+
+1.1.5  A map for your area - hosted for you. The app's map is an offline vector map. Ready-made regional maps for most of the world are hosted on Fox Pursuit's map service and stream straight to the app - you do not download, extract, or host anything. You simply point the app at your region (Section 4.4). If you would rather host the map yourself, you can (Section 2.4) - and there are good reasons to, covered there. Section 2 explains both.
+
+The site can live at your domain root or in a subfolder, for example https://yourdomain.com/foxhunt/.
+
+
+1.2  CHOOSE YOUR HOSTING PATH
+-----------------------------
+There are two ways to publish the app. Decide as you read this section, because Sections 6 and 7 are alternatives - you will follow only one of them.
+
+  PATH A - YOUR OWN WEB HOST.
+  Choose this if you already have web hosting, or intend to get one. You upload the files with a File Manager or FTP client, the same way you would publish any web page. This is the simpler path, and it is the one this product is built and supported around.  But please note that this file provides only the configuration settings you will need to implement.  You will need to consult your hosting platform if you need assistance with site configuration (not app configuration).  This document cannot provide site support for all the various web hosts.
+
+  PATH B - FIREBASE HOSTING (free).
+  Choose this if you do NOT have web hosting and would rather not subscribe to any. Google will serve the app for free, out of the SAME Firebase project that already holds your database and sign-in, with automatic HTTPS. The trade-off is that you publish the site to the hosting from a command line rather than by dragging files into a File Manager. It is a handful of commands the first time, and a single command for every update after that. If you choose this path you will continue through Section 5, skip Section 6, then do Section 7.
+
+Please read Section 7.1 before committing to Path B - it explains the limits of what this guide can promise about Firebase Hosting.
+
+You can switch paths later. Nothing in the app itself is tied to either one.
+
+
+1.3  THE FOUR FILES YOU OWN
+---------------------------
+Four files in this package hold YOUR settings. You will edit them in Section 4, and you must PRESERVE YOUR EDITS every time you install a newer build (Section 11):
+
+     0-config-firebase.js  your Firebase credentials
+     0-config-admin.js     your admin User ID list (ADMIN_UIDS)
+     0-config-foxhunt.js   your branding, page content, units, thresholds
+     0-config-license.js   your site key
+
+The 0- prefix has no special meaning to the app (although it cannot be changed); it simply keeps these four files together at the top of a file listing so they are easy to find. They are the only files that carry your personal settings.
+
+Every other file in the package can be replaced freely on an upgrade. Remember these four now; Section 11 will remind you.
+
+BACK THEM UP. Copy all four somewhere off this computer - a cloud drive, a USB stick, an email to yourself - as soon as you have filled them in. They are small text files. Rebuilding them means re-fetching your Firebase credentials, re-finding your admin UID, redoing every customization, and digging your site key back out of your records. Taking five after you have customized the files to make a backup can save an afternoon of work later. If you self-host your map (Section 2.4), back up the .pmtiles file too; it is the one thing here you may not be able to re-download.
+
+
+
+============================================================
+ SECTION 2 - YOUR MAP                           (both paths)
+============================================================
+
+The app draws its basemap from an offline vector map (a .pmtiles file). You have two ways to supply it (2.1 or 2.4), and for almost everyone the first (2.1) is all you need.
+
+  - 2.1  Use a hosted region (the quick path - recommended)
+  - 2.2  What participants see, and offline use
+  - 2.3  Map data and attribution
+  - 2.4  Host the map yourself (optional - and why you might)
+  - 2.5  Back up what you cannot re-download
+
+A note on why 2.4 exists, before you decide: a widely used piece of ham radio software once came within weeks of disappearing worldwide when its sole creator died with no plan for its continuation. Fox Pursuit is built so that cannot happen to your installation. Self-hosting your map (2.4) means your app depends on nothing outside your own control - not this map service, not its maintainer. The quick path (2.1) below is easiest; self-hosting (2.4) is the durable one. Both are fully supported, and you can switch at any time by changing one line.  So, choosing the quick path now does not impose any risk of loosing your site later.
+
+
+2.1  USE A HOSTED REGION (THE QUICK PATH - RECOMMENDED)
+-------------------------------------------------------
+Ready-made regional maps are hosted for you at https://maps.foxpursuit.com and stream to the app over the network - no download, no extracting, no hosting, and no server configuration on your part. The service already answers HTTP Range requests and sends the required CORS headers, so it "just works."
+
+2.1.1    Open the coverage map.  DO THIS NOW.  Go to:  https://foxpursuit.com/maps/
+2.1.2    Find the area you hunt. Use the "Check my location" button to quickly navigate to your current location.
+2.1.2.1  Note how the map boundaries overlap. This is to accommodate hunts that may occur in an area that overlaps from one area to the next.  Therefore, your location may be covered by one or more maps.  Select the one that fits your hunt area.
+2.1.2.2  When selected, each region shows its name, such as:
+         USA-MO_SSW
+
+2.1.3  SAVE THE NAME shown for the area you selected.  That is all you need from this section - you will put it into tileUrl in Section 4.4.
+
+That is the entire map setup. The map streams from the hosted service the next time the app loads.
+
+2.1.4  The bundled sample. This package ships with tileUrl already pointed at a small local sample (Southwest Missouri, United States) in the maps/ folder, so the map works the instant you publish - even if you do not pick a region, and even with no connection on that first load. Leave it as-is to try things out; switch tileUrl to your region's address when you are ready.
+
+If your hunt area is not yet covered, or you want a tighter/custom area, see 2.4 (host the map yourself) - you can build any region you like.
+
+
+2.2  WHAT PARTICIPANTS SEE, AND OFFLINE USE
+-------------------------------------------
+The map behaves the same whether it streams from the hosted service or from your own copy.
+
+2.2.1  Detail and zoom. Regional maps carry full street-level detail across the hunt area. Zoom in far enough and the map stops getting more detailed - it will not go blank on you.
+
+2.2.2  Offline. Tiles are cached as they are viewed online, so anywhere a participant has panned while online is available offline. For deliberate offline use, the app's "Download / View Offline Maps" panel saves a chosen radius - or the whole region - into the device for use with no signal. Before heading into weak coverage, hunt participants can open the hunt area once with a connection (or use the download panel) so the tiles are stored on their device.
+
+2.2.3  If you change the map later. If you point tileUrl at a different region, participants who had downloaded the old one will be prompted to refresh; the app detects the change and reloads cleanly.
+
+
+2.3  MAP DATA AND ATTRIBUTION
+-----------------------------
+The map data is (c) OpenStreetMap contributors, licensed under the Open Database License (ODbL). Fox Pursuit displays this credit on the map automatically. You must keep it visible - do not remove or cover the OpenStreetMap attribution shown on the map. If you host or share the map file yourself (2.4), keep the ATTRIBUTION.txt that accompanies it. That is the whole of your licensing obligation to OpenStreetMap.  The app handles the visible part for you.
+
+
+2.4  HOST THE MAP YOURSELF (OPTIONAL - AND WHY YOU MIGHT)
+--------------------------------------------------------
+You are never required to host the map - the quick path (2.1) covers most people. But hosting your own copy is fully supported, and there are two real reasons to:
+
+  - Control: your map lives on your own host, on a domain you choose, with no dependence on an outside service being up.
+  - Continuity: this is the important one. If the hosted map service ever goes away - or its maintainer stops supporting it, becomes unable to, or dies - a self-hosted installation keeps working indefinitely, because it depends on nothing outside your control. Hosting your own map (and keeping the file backed up, 2.5) is how you make your hunt outlast anyone, including the app creator.
+
+You can either download a ready-made region and host it, or build your own.
+
+2.4.1  Get a .pmtiles file.
+  (a) Download a ready-made region: from the coverage map (2.1.1), use the region's download link to save its .pmtiles to your computer.
+  (b) Or build your own with the free "pmtiles" tool, which extracts any rectangle of the world from OpenStreetMap-based Protomaps builds:
+      - Get the tool from  https://github.com/protomaps/go-pmtiles/releases
+      - Find your area's bounding box (min/max longitude and latitude) with a tool such as https://www.latlong.net/polygon-drawer or https://boundingbox.klokantech.com  (use the "csv"/"lng,lat" form).
+      - Extract, for example:
+    pmtiles extract https://build.protomaps.com/YYYYMMDD.pmtiles your-region.pmtiles --bbox=minLon,minLat,maxLon,maxLat --maxzoom=15
+ (Use a current build date from https://maps.protomaps.com/builds/; older daily builds are removed and will fail.)
+ Either way, keep the accompanying ATTRIBUTION.txt with the file (2.3).
+
+2.4.2  Put it where the app can reach it.
+  (a) Simplest: drop the .pmtiles into the app's own maps/ subfolder and set tileUrl to "maps/YOUR-REGION.pmtiles" (Section 4.4).
+  (b) Or host it anywhere else (your own domain, a cloud bucket, a CDN) and set tileUrl to its full https address.
+
+2.4.3  Your host must support two things (the hosted service in 2.1 already does):
+       - HTTP Range requests (a 206 response). The app reads a few kilobytes out of the middle of the file rather than downloading the whole thing; a host that ignores Range returns the entire file and breaks the map. Nearly all web hosts, and Firebase Hosting, support Range out of the box.
+       - CORS headers, IF the file is on a different domain than the app. It must send Access-Control-Allow-Origin and allow the Range request header and expose ETag/Content-Range. (Same-folder hosting per 2.4.2(a) needs none of this.)
+       Use the admin page's "Check map hosting" button to confirm your file loads, answers Range, and (if cross-domain) sends CORS correctly.
+
+2.4.4  Size. Keep a hosted piece reasonable (roughly under 100 MB) so the whole map can be saved for offline use in one step; larger files still work online and by radius download, just not as a single whole-map save.
+
+2.4.5  A NOTE FOR THE FUTURE - map schema versions. The daily builds referenced in 2.4.1 follow a published map schema, and that schema is occasionally revised. This build of Fox Pursuit draws maps built to the PROTOMAPS BASEMAP v4 schema. Builds made to that schema will keep working forever, because your copy of the app and your copy of the map never change unless you change them.
+
+  If, years from now, you build a new .pmtiles and the map opens but looks wrong - missing roads, unlabeled, oddly colored - you have almost certainly been given a NEWER schema than this app knows how to draw. That is a version mismatch, not a broken file, and there are two ways out:
+  (a) Build from an older daily build made while v4 was current, or
+  (b) Use a Fox Pursuit build updated for the newer schema, if one exists.
+
+  Record this somewhere with your backups: THIS APP EXPECTS PROTOMAPS BASEMAP v4. It is the one piece of information that is obvious today and impossible to work out later.
+
+2.4.6  IF THE MAP SERVICES THEMSELVES ARE GONE.
+  Section 2.4.1 assumes two things still exist: this seller's hosted regions, and the Protomaps daily builds. Neither is under your control, so here is the path that depends on neither:
+
+  The underlying map data is OpenStreetMap, which is a public, freely licensed database maintained by a global community and mirrored widely. Regional extracts have been published continuously by several independent providers for many years, and the tools to turn one into a .pmtiles file are open source.
+
+  In outline: download a regional extract of OpenStreetMap data, then run an open-source tile builder over it to produce a .pmtiles archive. The Protomaps "basemaps" project publishes the exact build configuration used for the daily builds, so a rebuild can match what this app expects. It needs a reasonably capable computer and some patience - hours, not minutes, for a large area - but it needs no permission, no account, and no company's continued existence.
+
+  You will not need this while the services in 2.4.1 are running. It is written down so that the option is known to exist, by someone who may be reading this long after the fact.
+
+
+2.5  BACK UP WHAT YOU CANNOT RE-DOWNLOAD
+----------------------------------------
+Continuity only works if the pieces survive your device. Save these somewhere OFF the device - a password manager, a cloud drive, or a printout:
+
+  - Your SITE KEY (the FP1. key in 0-config-license.js), which you will produce later, and your GUMROAD LICENSE KEY, which you received in your receipt email. Either one gets you back: the site key is what licenses the app, and the Gumroad key can always retrieve it again from setup.html. Save both.
+  - Your four personalized files: 0-config-admin.js, 0-config-firebase.js, 0-config-license.js, and 0-config-foxhunt.js (Section 4).
+  - If you self-host the map (2.4): your .pmtiles file(s) and ATTRIBUTION.txt.
+
+With those in off-device backup, any installation can be rebuilt from scratch on any device, with or without us.
+
+============================================================
+ SECTION 3 - SET UP YOUR FIREBASE PROJECT   (both paths)
+============================================================
+Do this section regardless of which hosting path you chose. Remember, read the entire section before performing any of the steps.
+
+
+3.1  CREATE THE PROJECT
+-----------------------
+3.1.1  If you do not have one, create a free Google account.  Having a Google account is mandatory. Log into it in your browser. Chrome is recommended.
+
+3.1.2  Go to https://console.firebase.google.com and create a new Firebase project. The project name appears in some system messages, so give it a meaningful, related name - for example foxhunt, ARDF, or fox-pursuit.
+
+3.1.3  Enabling Gemini in Firebase is recommended. It is not required for this app, but you may find the on-screen prompts helpful. A large "Gemini in Firebase" panel may appear.  This panel you may close.
+
+3.1.4  Enabling Google Analytics is NOT recommended. This app deliberately keeps its own usage data anonymous, and it will not use Google Analytics even if you enable it.
+
+
+3.2  CREATE THE FIRESTORE DATABASE
+----------------------------------
+IMPORTANT: Read this entire section before performing any action.
+
+3.2.1  In the left menu, under Product categories, select "Databases & Storage > Firestore".   If you see a "Create Database" button then you may skip to 3.2.2.
+
+Google rearranges this console periodically, so if the labels do not match, use either method below.
+
+3.2.1.1  Enter the address directly in your browser, replacing PROJECT-ID with your own:
+
+   https://console.firebase.google.com/project/PROJECT-ID/firestore
+
+Your PROJECT ID is not necessarily the name you typed when you created the project. Find it under Settings > Project settings > General > "Project ID". It is always lowercase, and Google often appends a few random characters to make it unique.
+
+3.2.1.2  Or use "Search for products" at the top of the left menu and search for "Firestore".
+
+3.2.1.3  If the "Create database" button does not appear, open the same address in a NEW TAB, or press CTRL+F5. The console sometimes fails to draw the page fully when you arrive through the menus. This is a console quirk, not a problem with your project.
+
+3.2.2  Select "Create Database".
+
+3.2.3  Select "Standard edition".
+
+3.2.4  Select your location. This cannot be changed later. (Leave Database ID at the default.)
+3.2.4.1  nam5 is a good choice for workloads centered on the central US.
+3.2.4.2  nam7 gives lower latency across more of the eastern and central US.
+3.2.4.3  Outside the US, pick the region nearest your participants.
+3.2.4.4  Click the Next button.
+
+3.2.5  Select "Start in production mode". This is correct - you will paste the real security rules in Section 5, so ignore the default rules.
+
+3.2.6  Press "Create".
+
+
+3.3  ENABLE THE TWO SIGN-IN METHODS
+-----------------------------------
+3.3.1  Go to Authentication (in some console versions, under "Security > Authentication") and press "Get started".
+
+3.3.2  Enable Email/Password. Select it, then turn on ONLY the first "Enable" switch. Do NOT enable "Email link (passwordless sign-in)". This method is used ONLY for your private admin login.  Press Save.
+
+3.3.3  Select "Add new provider", choose "Anonymous", and toggle it to Enable. This is what lets participants use the app with just a handle.
+3.3.3.1  Enable Auto clean-up.  The application needs to keep track of users in order for the collaboration features to function.  However, user anonymity is a key priority.  Thus, anonymous users are created as participants log into your site.  The count of these anonymous users can build up over time and there is no reason to keep them.  The Auto clean-up feature will periodically delete them.  Press Save.
+
+Both methods are required. Anonymous serves your participants; Email/Password serves you.
+
+Both are required, and Anonymous is the one most often missed. If it is left off, sign-in fails for everyone: the app will say the site is not finished setting up and name the sign-in methods as the cause, but the fix is here, not in your config files.
+
+
+3.4  REGISTER THE WEB APP AND COPY YOUR CREDENTIALS
+---------------------------------------------------
+REMEMBER: Read this entire section before performing any action.
+
+3.4.1  Go to Settings (the gear icon, upper-left or upper-right depending on console version) > General > "Your apps".
+
+3.4.2  If you have no web app yet, add one - the "web" app, shown with the </> symbol.
+
+3.4.3  Give it a meaningful nickname. Using the same name as the project is a fine choice.
+
+3.4.4  Do NOT tick "Also set up Firebase Hosting for this app." This applies to BOTH paths, including Path B. That checkbox only launches a guided console walkthrough, and it will interleave hosting steps into your setup before you are ready for them. Path B users will set up hosting properly, from the command line, in Section 7 - which is the same thing the checkbox would eventually have you do, in a cleaner order.
+
+3.4.5  Press "Register app".
+
+3.4.6  A firebaseConfig block appears. COPY IT. You want every value: apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId. You will paste these into 0-config-firebase.js in Section 4.1. If you lose them, you can always come back here: Project settings > General > "Your apps".
+
+3.4.7  Select "Continue to console". If the console offers further hosting or CLI steps at this point, you may leave them - Section 7 covers them in full.
+
+
+3.5  CREATE YOUR ADMIN ACCOUNT
+------------------------------
+The admin panel and the analytics dashboard are protected by a dedicated email/password account whose ID never changes - so the same login works on every device and survives clearing your browser.
+
+3.5.1  Go to Authentication > Users > "Add user".
+
+3.5.2  Enter any email address and a password. This is a login, not a mailbox. It does not need to be a real, deliverable address unless you later want to change the admin email (see Section 10.3).
+
+3.5.3  Click the new user in the list and copy its "User UID" - a long string of letters and numbers.
+
+Keep that UID handy. You will paste it into TWO places: 0-config-admin.js (Section 4.2) and firestore.rules (Section 5). It must match in both.
+
+
+
+============================================================
+ SECTION 4 - CONFIGURE THE FOUR FILES YOU OWN   (both paths)
+============================================================
+Edit these in a plain-text editor. Change only the VALUES inside the quotation marks. Do not rename the keys, and do not remove commas, quotes, or braces - a single missing character will stop the file from loading.
+
+
+4.1  0-config-firebase.js  - YOUR FIREBASE CREDENTIALS
+------------------------------------------------------
+Paste the firebaseConfig values you copied in Section 3.4.6 into the firebaseConfig object. This is what connects the app to YOUR Firebase project.
+
+CAUTION: the Firebase values go in 0-config-firebase.js, NOT 0-config-foxhunt.js. The two names are similar. 0-config-firebase.js holds "const firebaseConfig = {...}"; 0-config-foxhunt.js holds "const FOXHUNT_CONFIG = {...}" for branding and content.
+
+The block looks like this:
+
+    const firebaseConfig = {
+      apiKey:            "YOUR_API_KEY_VALUE",
+      authDomain:        "YOUR_AUTHDOMAIN_VALUE",
+      projectId:         "YOUR_PROJECTID_VALUE",
+      storageBucket:     "YOUR_STORAGEBUCKET_VALUE",
+      messagingSenderId: "YOUR_MESSAGINGSENDERID_VALUE",
+      appId:             "YOUR_APPID_VALUE"
+    };
+
+Easiest method: select the whole placeholder block above - from "const firebaseConfig = {" through the closing "};" - and replace it with the block Firebase gave you. The block Firebase gives you already includes its own closing "};". Keep every quotation mark, and be sure the closing "};" survives, because there is more code below it in the file.
+
+About measurementId: you will only have this value if you enabled Google Analytics when creating the project, which this guide recommends against. If your pasted config has no measurementId line, that is correct and expected. This app never uses it. Its absence is not a missed step.
+
+If you get this wrong, the app will load but sign-in will fail. The app recognizes the common setup errors and says so in plain language on the sign-in screen, with a link to the Troubleshooting page - you do not have to decode a raw Firebase error. Section 8.1 shows you how to confirm the file actually reached your server, which is the failure this step most often produces. See also Section 15.
+
+
+4.2  0-config-admin.js  - YOUR ADMIN UID
+----------------------------------------
+Put the admin UID from Section 3.5.3 into the ADMIN_UIDS list BETWEEN the single-quote marks:
+
+    const ADMIN_UIDS = [
+      'YOUR_ADMIN_UID'
+    ];
+
+For more than one admin, see Section 10.2.
+
+
+4.3  0-config-foxhunt.js  - YOUR BRANDING AND BEHAVIOR
+------------------------------------------------------
+This holds your brand name, page content, units, hunt length, bearing thresholds, theme, and more.
+
+One value in this file IS required before the map will work - the map address, tileUrl, covered in 4.4 just below. Everything else here is optional: get the app running first, then personalize it using Section 9. The shipped defaults are sensible and the app will run as-is.
+
+
+4.4  0-config-foxhunt.js  - YOUR MAP ADDRESS (tileUrl)   [REQUIRED]
+-------------------------------------------------------------------
+tileUrl, near the top of 0-config-foxhunt.js, tells the app where to find the map file you prepared in Section 2.
+
+tileUrl tells the app where to find its map. For a ready-made hosted region (Section 2.1 - the quick path), use the region's full address, such as:
+
+    tileUrl: "https://maps.foxpursuit.com/USA-MO_SSW.pmtiles",
+
+For a map you host in the app's own maps subfolder (Section 2.4), use the folder and file name, such as:
+
+    tileUrl: "maps/your-region-name.pmtiles",
+
+This package ships with tileUrl set to the bundled sample ("maps/springfield-branson.pmtiles") so the map works the moment you publish.  To simplify implementation, it is suggested that you make no changes to the tileUrl value now, and publish the site with the default map.  After you have validated it is working then return to this section and change the tileUrl value to your region's address (hosted) or file name (self-hosted). If you host the .pmtiles on a different domain than the app, that host must answer HTTP Range requests and send CORS headers (Section 2.4.3); the hosted service already does both.
+
+If tileUrl is blank or an invalid path, the app shows a "Map not configured" notice in place of the map, rather than a blank screen, so you can tell at a glance that this step requires correction.
+
+
+4.5  0-config-license.js  - YOUR SITE KEY   [DONE LATER, IN SECTION 8.2]
+-------------------------------------------------------------------------
+LEAVE THE 0-config-license.js FILE ALONE FOR NOW. It is filled in after your site is published, because the page that issues your site key runs on your own site. Section 8.2 walks you through it and gives you the exact line to paste.
+
+THE REMAINDER OF THIS SECTION IS INFORMATION ONLY.  DO NOT MAKE ANY CHANGES TO YOUR FILES.  YOU WILL MAKE THE CHANGES IN LATER SECTIONS.
+
+TWO DIFFERENT KEYS - THIS TRIPS PEOPLE UP
+  GUMROAD LICENSE KEY   Comes with your purchase, on your receipt. Looks like
+                        1B686E58-DC7F46A8-9E8DCD48-062F41DC. This is your proof
+                        of purchase. You paste it into setup.html in your
+                        browser - you never edit that file in a text editor.
+
+  SITE KEY              What setup.html gives you back. Begins with FP1. and
+                        runs about 150 characters. THIS is what licenses your
+                        site, and this is what goes in 0-config-license.js.
+
+You will keep both. They are not interchangeable, and neither one replaces the other.
+
+What will happen in Section 8.2:
+
+  - You open setup.html in your BROWSER and paste your Gumroad license key into the box on the page. You do not edit setup.html in a text editor; it is the same file for everyone, and a newer build replaces it like any other program file.
+  - Your purchase is checked once, over the internet, and your site is issued a permanent site key.
+  - setup.html shows you a finished line, with a Copy button. It looks like:
+
+        const FOXHUNT_SITE_KEY = "FP1.eyJpZCI6...";
+
+  - You replace the ENTIRE line in 0-config-license.js that begins const FOXHUNT_SITE_KEY with that one - const, quotes, semicolon and all. (Pasting just the key between the quotes works too, if you prefer.)
+  - From then on, your site key is checked inside the browser with no internet connection and no license server, for as long as your files exist.
+
+Whichever way you paste it, the site key must sit on ONE LINE. A key broken across several lines stops the file from loading altogether - the commonest mistake with this step, and the app names it explicitly if it happens.
+
+WHY THE KEY LIVES IN A FILE RATHER THAN IN YOUR BROWSER
+The key travels with your site, so every phone and tablet that loads your pages is licensed automatically. Participants never enter anything. Replace a device, wipe a browser, or move to a different web host, and nothing has to be re-entered - the key is already in your deployment.
+
+The check runs entirely inside the browser, using mathematics, with no license server and no internet connection. Nothing about it can stop working because a service was switched off, a company closed, or the author of this software is no longer around. Section 14 explains that in full.
+
+You can confirm the key at any time by opening setup.html in your browser on your published site (Section 8.2).
+
+Note the two directions of travel through that page: your GUMROAD LICENSE KEY goes IN, pasted into the page in your browser; the finished line for 0-config-license.js comes OUT, to be pasted into that file with a text editor. setup.html itself is never edited.
+
+REMEMBER: these four files (0-config-admin.js, 0-config-firebase.js, 0-config-foxhunt.js, and 0-config-license.js) are the ONLY ones you personalize. Section 11 explains how to preserve them when you install a newer build.
+
+
+============================================================
+ SECTION 5 - PUBLISH THE FIRESTORE SECURITY RULES   (both paths)
+============================================================
+Until you do this, the admin pages and the analytics dashboard will not work.
+
+5.1  Open firestore.rules (included in this package) in a text editor.
+
+5.2  Find the isAdmin() function near the top and replace YOUR_ADMIN_UID with the admin UID from Section 3.5.3:
+
+        function isAdmin() {
+          return request.auth != null &&
+                 request.auth.uid in ['YOUR_ADMIN_UID'];
+        }
+
+     Use the SAME UID you put in 0-config-admin.js. A mismatch here is the single most common setup problem.
+
+5.3  Go to your project's Firestore Rules tab. (Do NOT go to Realtime Database.)
+
+     https://console.firebase.google.com/project/PROJECT-ID/firestore/rules
+
+     In the menus: Databases & Storage > Firestore, then the "Rules" tab.
+
+5.4  Replace the entire contents of the rules editor with your edited firestore.rules text.
+
+5.5  Click Publish.
+
+These rules let participants run hunts, let any signed-in device record anonymous analytics, and restrict the analytics dashboard and admin-only actions (such as Force Close) to your admin UID or UIDs.
+
+Note that the rules are published in the Firebase console on BOTH hosting paths. Publishing rules has nothing to do with where your files are served from.
+
+
+NEXT: Go to Section 6 if you chose PATH A (your own web host). Go to Section 7 if you chose PATH B (Firebase Hosting). Do one, not both.
+
+
+
+============================================================
+ SECTION 6 - PUBLISH YOUR SITE - PATH A: YOUR OWN WEB HOST
+============================================================
+Path B users: skip this section entirely and go to Section 7.
+
+
+6.1  UPLOAD THE FILES
+---------------------
+6.1.1  Upload EVERY file in this package to your host, keeping them together in one folder.
+
+6.1.2  Include the hidden .htaccess file. It disables directory listings and keeps the service worker from being served stale (which is what lets your updates actually reach people). If your File Manager hides dotfiles, turn on "show hidden files" so you can see and upload it.
+
+6.1.3  Include robots.txt. See Section 13.
+
+6.1.4  Upload your map-data file too. If you are hosting your .pmtiles file on this same web space (the simplest arrangement), upload it to the folder your tileUrl points at (Section 4.4) - for example a maps subfolder. Your host must serve files with HTTP Range request support; almost every static host does. Section 2 covers obtaining the file and confirming Range support.
+
+
+6.2  IF YOUR HOST AUTO-CREATES AN index.php
+-------------------------------------------
+For site security purposes some hosts automatically place an empty index.php file in every new directory. If that empty file is served ahead of index.html, visitors get a blank page instead of your site.
+
+If you see an empty index.php in the folder, delete it before uploading.
+
+If your host keeps putting it back, the reliable fix is to tell the web server to prefer index.html. On an Apache host, change this line "DirectoryIndex index.html" in your .htaccess file to "DirectoryIndex index.html index.php" (without the quote marks).
+
+With that in place, a stray index.php can reappear as often as it likes and will never be reached.
+
+
+6.3  NON-APACHE HOSTS
+---------------------
+Firebase Hosting ignores .htaccess, and so do non-Apache servers such as Nginx or IIS. If your host is not Apache, set the equivalent "no directory listing" option in its control panel, and make sure sw.js is not aggressively cached. See Section 13.
+
+
+NEXT: Go to Section 8 (First-run check).
+
+
+
+============================================================
+ SECTION 7 - PUBLISH YOUR SITE - PATH B: FIREBASE HOSTING
+============================================================
+Path A users: skip this section entirely and go to Section 8.
+
+IMPORTANT NOTE:  Determine a permanent location where you will place all the application files before proceeding.  It may be changed, but maintenance will be easier if keep the files in the same location - and not delete the files after deployment.
+
+
+7.1  SCOPE AND SUPPORT - PLEASE READ FIRST
+------------------------------------------
+The instructions in this section are provided as a courtesy. Supporting the Firebase Hosting platform, which Google changes on its own schedule, is outside the scope of this product. The app itself is fully supported; the Firebase command-line tooling around it is not something this product can guarantee to track.
+
+What that means in practice: the steps below were tested and worked, but Google may rename a menu, add a prompt, or reorder its questions at any time. If a step does not match what you see, use the explanation of WHAT the step is for to find the equivalent.
+
+Your input is genuinely appreciated - especially reports of changes to the Firebase flow and the steps that worked for you. It helps everyone who follows this path later.
+
+Note: these instructions assume a Windows PC. macOS and Linux work the same way apart from how you open a terminal and how you copy files.
+
+Everything else in this guide is unchanged on Path B. The Firebase project, the admin account, the security rules, and the four config files are all identical. Only the "publish your files" step is different.
+
+A ready-made firebase.json is included in this package. It keeps your .html page URLs working and tells Firebase never to cache the service worker, so that your updates take effect. Directory listings are off by default on Firebase Hosting, so no .htaccess is needed - Firebase ignores .htaccess anyway.
+
+
+7.2  INSTALL NODE.JS AND THE FIREBASE CLI
+-----------------------------------------
+The Firebase CLI is a command-line tool. It is installed through Node.js.
+
+7.2.1  Check whether you already have Node.js. Open a Command Prompt and type:
+
+           node -v
+
+       Type it exactly - "node -v", with no space between the hyphen and the v. If you type "node - v" by mistake you will land in Node's interactive prompt, which shows a bare ">" and will not understand ordinary commands. Press Ctrl+C twice to get out.
+
+       If you get a version number, Node.js is installed - go to step 7.2.3.
+       If you get "'node' is not recognized...", it is not installed - continue.
+
+7.2.2  Install Node.js. Go to https://nodejs.org, click "Get Node.js", and choose the Windows installer (the LTS version). When the .msi finishes downloading, run it and accept the defaults.
+
+       Close and reopen your Command Prompt afterward - an already-open window will not see the newly installed program.
+
+7.2.3  Confirm both tools are present. In a fresh Command Prompt:
+
+           node -v
+             then
+           npm -v
+
+       Both should print version numbers and return you to the normal prompt.
+
+7.2.4  Install the Firebase CLI:
+
+           npm install -g firebase-tools
+
+       Let it run. It takes under a minute. You will see a good deal of output, most of which you can ignore:
+7.2.4.1  "deprecated" warnings refer to packages inside the Firebase tool itself. They are not about your setup and there is nothing to fix.
+7.2.4.2  "allow-scripts" warnings are npm housekeeping. Do NOT run "npm approve-scripts"; it is not needed.
+7.2.4.3  A notice that a new version of npm is available. Do NOT upgrade npm. The version you have works, and changing tooling mid-setup only adds variables.
+       The line that matters is the one reading "added NNN packages".
+
+       If the install fails with a permissions error, close the Command Prompt, reopen it with "Run as administrator", and try again.
+
+7.2.5  Confirm the install:
+
+           firebase --version
+
+       A version number means you are ready. If instead you get "'firebase' is not recognized...", close the Command Prompt entirely, open a fresh one, and try again - a new command is not visible to a window that was already open.
+
+
+7.3  SIGN IN TO FIREBASE
+------------------------
+In the Command Prompt, run:
+
+    firebase login
+
+The CLI may ask whether to enable Gemini features and whether to allow usage-data collection. For each prompt answer as you prefer, but it is suggested that you decline; this guide gives you the exact commands, and you can enable the features later if you want help with the CLI. Your browser will then open. Complete the Google sign-in and allow access, using the same Google account that owns your Firebase project. Then return to the Command Prompt and close it.
+
+
+7.4  OPEN A TERMINAL IN THE APP FOLDER
+--------------------------------------
+This step matters more than it looks. Every remaining command MUST be run from the folder that holds the app files. If you run them from somewhere else - your user folder, for instance - Firebase will initialize and deploy the wrong directory.
+
+7.4.1  In Windows File Explorer, navigate INTO the folder that contains this package's files.
+
+7.4.2  Right-click inside the folder (on empty space) and choose "Open in Terminal". This opens a command window already pointed at the correct folder. Depending on your Windows version this opens PowerShell or Command Prompt; either is fine, and this guide gives commands for both where they differ.
+
+7.4.3  Confirm you are in the right place. Run:
+
+           dir
+
+       You should see firebase.json, index.html, hunt.html, sw.js, and the rest of the app files. If you do not see firebase.json, you are in the wrong folder. Do not continue until you do.
+
+       (If you prefer to change folders by typing: use cd "full path in quotes" - quotes are required if the path has spaces. On Windows, to move to a different drive you must first type the drive letter alone, for example: E: )
+
+
+7.5  ENABLE HOSTING ON YOUR PROJECT
+--------------------------------------
+Hosting has to be switched on before the CLI can deploy to it. Go to
+https://console.firebase.google.com/project/PROJECT-ID/hosting (replacing "PROJECT-ID" with the one you saved in 3.2.1.1) and click Get started, stepping through the prompts and finishing with Continue to Console. Ignore the suggestion to install the CLI - you already have it.
+
+If you skip this, firebase deploy fails with "Assertion failed: resolving hosting target of a site with no site name or target name", which does not explain itself.
+
+NOTE:  Firebase gives your site two addresses - PROJECT-ID.web.app and PROJECT-ID.firebaseapp.com. They serve the same site; use whichever you prefer. The shorter .web.app is the usual choice.
+
+
+7.6  RUN firebase init hosting
+------------------------------
+From the terminal you opened in the app folder, run:
+
+    firebase init hosting
+
+Including the word "hosting" matters - it takes you straight to the hosting questions. If you run plain "firebase init" instead, you will first get a menu of features to select. In that case, arrow down to "Hosting: Set up deployments for static web apps", press the SPACE bar to select that line and ONLY that line, then press Enter.
+
+    CAUTION: do not select "App Hosting". It sits right next to "Hosting" and the names are nearly identical, but App Hosting is a different Google product for server-rendered applications. This app is a static site. You want plain "Hosting".
+
+Answer the prompts as follows:
+
+    "Are you ready to proceed?"
+        Yes.
+
+    "Please select an option:"
+        Use an existing project.
+
+    "Select a default Firebase project for this directory:"
+        Choose the project you created in Section 3. Take care here if you have more than one project - this determines where your app is published.  If you only have one project in Firebase (most likely) then the script will automatically answer this question for you and proceed to the next question.
+
+    "What do you want to use as your public directory?"
+        Enter a single dot:  .
+        The dot means "the current folder". Do not accept the default of "public".
+
+    "Configure as a single-page app (rewrite all urls to /index.html)?"
+        No. This app is multi-page. Answering Yes would break it.
+
+    "Set up automatic builds and deploys with GitHub?"
+        No.
+
+    "File index.html already exists. Overwrite?"
+        No. Keep the app's own index.html.
+
+    "Would you like to install agent skills for Firebase?"
+        No. These are optional helper files for AI coding assistants. They are not needed and would only add files to your app folder.
+
+When it finishes you will see "Firebase initialization complete!".
+
+Note that init also creates three new files: 404.html, .gitignore, and .firebaserc. Leave all three alone. The first two are harmless. The third, .firebaserc, is the small file that records WHICH Firebase project you deploy to - keep it, because without it a later deployment will not know where to send your files.
+
+
+7.7  RESTORE firebase.json   *** CRITICAL - DO NOT SKIP ***
+-----------------------------------------------------------
+Look at the output of the command you just ran. Among the last lines you will see:
+
+    +  Wrote configuration info to firebase.json
+
+Read that carefully. "firebase init" OVERWRITES firebase.json, and it does so WITHOUT ASKING. It asked your permission before touching index.html, but it does not extend the same courtesy to firebase.json. It has just replaced the firebase.json included in this package with a short, generic one of its own.
+
+Why this matters: the included firebase.json carries a required setting that tells Firebase never to cache sw.js, the service worker. Without that setting, browsers can hold on to a stale copy of your app, and ANY UPDATES YOU MAKE WILL NOT REACH YOUR USERS. Worse, nothing appears to be wrong - the site works, it is simply frozen on an old version. This is a silent failure, which is exactly why this step is called out so strongly.
+
+TO FIX IT: copy firebase.json from your ORIGINAL DOWNLOAD of this package back into the app folder, overwriting the one init just wrote.
+
+    The pristine copy is always sitting in the package you downloaded, so it cannot be lost. If you prefer, you can instead open firebase.json in a text editor and replace its entire contents with the correct version - but copying the file from the download is simpler and less error-prone.
+
+THEN CONFIRM IT. The correct file contains a "headers" section that mentions sw.js. Check for it:
+
+    In Command Prompt:
+        findstr "sw.js" firebase.json
+
+    In PowerShell:
+        Select-String -Path firebase.json -Pattern "sw.js"
+
+If it prints a matching line, the correct file is in place and you may continue. If it prints nothing at all, the generic file is still there. Copy the file again from the download and re-check. Do not deploy until this check passes.
+
+    (You can also simply look at the file - "type firebase.json" in Command Prompt, or "Get-Content firebase.json" in PowerShell. The correct file is around 20 lines and contains a "headers" block naming sw.js and Cache-Control. The generic one init writes is roughly half that and has no "headers" block at all.)
+
+    (Tip for next time: you can make a spare copy BEFORE running init - "copy firebase.json firebase.json.bak" in Command Prompt, or "Copy-Item firebase.json firebase.json.bak" in PowerShell - and restore from it afterward. But copying from the original download works even if you forget, which is why that is the method given here.)
+
+
+7.8  DEPLOY
+-----------
+From the app folder, run:
+
+    firebase deploy
+
+When it completes, the CLI prints your live URL. Your site is now at:
+
+    https://YOUR_PROJECT.web.app        (and also at https://YOUR_PROJECT.firebaseapp.com)
+
+Make a note of that URL. It is your site's address.
+
+To publish any future update, you run this same single command (firebase deploy) again from this same folder. See Section 11.3.
+
+YOUR MAP FILE: if you are hosting your .pmtiles file on Firebase Hosting too, place it in this app folder (for example in a maps subfolder) BEFORE you deploy, and set tileUrl (Section 4.4) to your-site-address/maps/your-region-name.pmtiles. Firebase Hosting answers HTTP Range requests, so there is nothing extra to configure. Section 2 has the detail.
+
+
+7.9  CONFIRM THE SERVICE-WORKER HEADER
+--------------------------------------
+This verifies that your restored firebase.json took effect on Google's servers.  It is worth the sixty seconds.
+
+7.9.1  Open https://YOUR-SITE.web.app/sw.js directly in your browser. The file's text appears.
+
+7.9.2  Press F12, select the Network tab, and reload. Click the sw.js entry.
+
+7.9.3  Under Response Headers you want:
+cache-control: no-cache, no-store, must-revalidate
+
+If you see that, the configuration is correct end to end.
+
+If instead you see cache-control: max-age=3600, firebase.json did not take effect - re-check Section 7.7 and deploy again.
+
+Do not look for sw.js among the requests on the app's own pages. The service worker registers after the page finishes loading, and browsers do not consistently list that fetch there. Its absence means nothing.
+
+
+7.10  CUSTOM DOMAIN (optional)
+-----------------------------
+If you own a domain and would like the app served from it rather than from the .web.app address:
+
+7.10.1  Go to your project's Hosting page.
+
+       https://console.firebase.google.com/project/PROJECT-ID/hosting
+
+       In the menus: Hosting & Serverless > Hosting.
+
+    CAUTION: choose "Hosting", NOT "App Hosting". As in Section 7.5, the two sit next to each other in the menu and the names are nearly identical. Your site lives under plain "Hosting".
+
+7.10.2  Select "Add custom domain" and follow the instructions. Firebase will give you DNS records to add at your domain registrar.
+
+7.10.3  Add those records with your registrar, then wait. DNS changes are not instant and can take anywhere from minutes to a day to propagate.
+
+7.10.4  HTTPS for the custom domain is provisioned automatically once the domain verifies. There is nothing for you to buy or install.
+
+7.10.5  If sign-in stops working on the custom domain, add it under Authentication > Settings > Authorized domains. The .web.app and .firebaseapp.com addresses are authorized for you automatically; a domain you bring yourself may not be.
+
+Note: if the domain you want to use is already serving another website, pointing its DNS at Firebase will take that site down. Use a subdomain (for example app.yourdomain.com) if you need both.
+
+
+NEXT: Go to Section 8 (First-run check).
+
+
+
+============================================================
+ SECTION 8 - FIRST-RUN CHECK   (both paths)
+============================================================
+Open your site - on Path A the address you uploaded to, on Path B the .web.app address the CLI printed.
+
+IT MUST BE https://, NOT http://. This is not a recommendation. Over plain http the browser withholds the features the app is built on - location, compass, offline storage and the license check - and the app will show a wall telling you so rather than running badly. Nearly every host offers a free certificate; on Firebase Hosting (Path B) https is automatic. If your address begins http:// and will not switch, stop here and fix that first. Everything below assumes https.
+
+8.1  CONFIRM YOUR CONFIG FILES REACHED THE SERVER
+--------------------------------------------------
+BEFORE signing in, check that what you edited is actually what is being served. Editing a file on your computer and forgetting to upload it is the commonest deployment fault, and it produces confusing symptoms later.
+
+Open the following directly in your browser, substituting your own site address:
+
+     https://yourdomain.com/0-config-firebase.js (for Path A)
+     https://YOUR-PROJECT.web.app/0-config-firebase.js  (for Path B)
+
+It should display as plain text. Read it: it should hold your real Firebase values, not YOUR_API_KEY_VALUE.
+
+If the file still shows placeholders, it did not upload - fix that before going further. On Path B, remember that editing locally is not enough; you must run firebase deploy again.
+
+This takes thirty seconds and catches wrong-file-uploaded, edit-never-saved, and cached-old-copy in one go.
+
+A reasonable worry, answered: yes, anyone can read these files. That is by design and is safe. Firebase web configuration values are public identifiers, not secrets - they identify your project, they do not grant access to it. Your data is protected by the security rules you published in Section 5, which is why that step matters. Your license key is likewise meant to be readable; it is what licenses every visitor's device without anyone having to type anything. Google publishes the same advice for Firebase web apps.
+
+8.2  ACTIVATE YOUR LICENSE
+---------------------------
+This is the step that turns your purchase into a working license. Do it once, now, while you have an internet connection. It takes about a minute.
+
+Open setup.html IN YOUR BROWSER on your site - for example https://yourdomain.com/setup.html (Path A) or https://YOUR-PROJECT.web.app/setup.html (Path B). This is a page you visit, not a file you edit.
+
+8.2.1  Paste your GUMROAD LICENSE KEY - the one on your purchase receipt - into the box.  Copy and paste the license key; do not try to retype it. Press the Check License Key button.
+
+8.2.2  Your purchase is checked, and your site is issued its own permanent SITE KEY. The page shows the site key ID, the date, and a finished line to paste into 0-config-license.js, with a Copy this Line button.
+
+8.2.3  SAVE THE SITE KEY SOMEWHERE SAFE, off this web host - with your other backups, or in an email to yourself. It is your permanent license. It never expires, it works on any domain you later move to, and with it in hand you never need to contact anyone about licensing again.
+
+8.2.4  Now switch to a text editor. In 0-config-license.js, replace the ENTIRE line beginning const FOXHUNT_SITE_KEY with the line setup.html gave you. Upload the file (Path A) or run firebase deploy (Path B), then reload setup.html (CTRL+F5) in your browser.
+
+       It should now say "This site is licensed" and show the same details. Those
+       are read out of the key itself, so seeing them means the key is genuine,
+       complete, and correctly installed.
+
+DO THIS EARLY, NOT ON HUNT DAY. Issuing a key is the only step in the Fox Pursuit setup process that needs an outside service to be reachable. Once done it never happens again - nothing about running the app depends on any service, ever - but until it is done you need the internet and a working license service. Activate the day you buy.
+
+IF THE LICENSE SERVICE CANNOT BE REACHED, the page says so and asks you to try again shortly. Your purchase is unaffected. If it keeps failing, contact WA0MCS (qrz.com/db/WA0MCS) with your purchase details and a key will be sent to you directly - it is pasted into the same box.
+
+Select the link, "open the Fox Pursuit site."  This should land you on the index.html page.
+
+8.3  Enter a handle. You should land on the Home page.
+
+8.4  Tap Hunt and create a hunt. Confirm the map opens, that you can add a location and a bearing to the map, and that you can submit them.
+
+NOTE:  The first time you navigate to create a hunt, you may need to force a reload of the page (CTRL+F5).
+
+8.5  Open admin.html by typing its address directly - for example https://yourdomain.com/admin.html, or https://YOUR_PROJECT.web.app/admin.html.
+
+     There is deliberately NO link to admin.html anywhere in the app. You must enter the URL manually. This is intentional.
+
+     Sign in with the admin email and password you created in Section 3.5. You should see the admin panel: registered users, active hunts, blocked usernames, the map hosting check, and the change-credentials tool.
+
+8.6  In the admin panel, find the Map Hosting section and press "Check map hosting". This is the single most useful check on this page, because it answers in one click what would otherwise be a long hunt through your host's settings. A green result confirms three separate things: the map file is reachable at the address in tileUrl, your host answers HTTP Range requests (status 206), and the file really is a PMTiles v3 archive.
+
+     If it reports anything else, read the message - it names the specific fault rather than saying the map is broken:
+
+     "200, not 206" means your host ignored the range request. This is a hosting setting, not something this app can work around; ask your host to enable HTTP Range requests. See Section 2.4.
+
+     "404" means nothing is at that address. Check tileUrl (Section 4.4) and that the file really was uploaded.
+
+     "Blocked" means the request never completed. If your map file is on a different domain, that host is almost certainly missing CORS headers; otherwise it is unreachable. See Section 2.4.
+
+     "Not a PMTiles file" most often means the file was uploaded over FTP in ASCII mode, which silently corrupts binary files. Re-upload it in binary mode.
+
+8.7  Open analytics.html the same way. It should load the dashboard. It may well be empty until some hunts have been run and closed - that is normal, not a failure.
+
+If sign-in fails with an error mentioning an invalid API key, your 0-config-firebase.js values are wrong or incomplete. Revisit Section 4.1.
+
+If the admin pages load but say you are not an admin, or the analytics dashboard reports a permissions error, it is almost always a UID mismatch between 0-config-admin.js (Section 4.2) and the published rules (Section 5). See Section 15.
+
+Once this check passes, your deployment is complete. Everything that follows is reference.
+
+IMPORTANT REMINDER:  Do NOT delete folder containing the application files.  You will need it for future updates and changes you may make to the application's configuration.
+
+
+
+============================================================
+ SECTION 9 - CONFIGURING THE SITE  (0-config-foxhunt.js)
+============================================================
+Open 0-config-foxhunt.js in a plain-text editor. To modify the appearance of your site you will change the VALUES inside the quotation marks; do NOT rename the keys or any other text within the file. A missing comma or quote will stop the file from loading and the app will not start.  If you wish to make a note (comment) for yourself within the file you may do so by adding a double forward slash (the one below the question-mark symbol on your keyboard), preferably at the start of the line. The code will ignore any text added after the // .
+
+After editing, publish the changed file: on Path A re-upload it (Section 11.2); on Path B re-run firebase deploy (Section 11.3). Then hard-refresh a page on the site once.
+
+
+9.1  WHAT YOU CAN CHANGE
+------------------------
+  brandName: the name shown in the top bar and on the Home page.
+  theme: "original", "light", "midnight", "forest", "graphite", "desert", "high-contrast", "violet", or "custom".
+  customTheme: allows you to create a custom theme set of colors. Set as few as bg / accent / text / muted; the remaining site colors are derived from these.  A set of blue-toned colors have been defined as an example customTheme.
+  fontSans / fontMono: optional font overrides.
+  background: "grid" (default), "none", or "image" (see Section 9.2).
+  homeTagline / homeSubtitle, and their Style objects: the two lines under the brand on the Home page (size, color, bold, italic, and so on).
+  contact / about: the Contact and About page content.
+  gettingStarted / instructions / troubleshooting: the content pages.
+  units: "imperial" or "metric".
+  mapDownloadUrl: the address of a page offering ready-made map areas to download. Shown as a link on the admin page; leave it blank to hide that link. Defaults to the Fox Pursuit maps page.
+  persistUsernames: false (the default) keeps a participant's handle only on their own device, which is the privacy-first choice. Setting it true stores handles in your Firestore, where they then appear in the admin "Registered Users" list.
+  Hunt and bearing settings: hunt length, the "+30m" extend button, GPS and compass behavior, and the probable-area estimate. Each is commented in the file itself.
+
+NOTE: no password is ever required of a hunt participant. The app is passwordless for participants - a handle is all they enter. The email/password account exists for the ADMIN only.
+
+TIP: the theme re-skins the application only. The MAP keeps its own colors on purpose - the red "you are here" marker, the dark-red probable area, and the cool participant colors - so if you use a custom there then keep your accent color away from pure red and orange. If you use a "custom" theme, open the browser console (F12); it will warn you if your text and background contrast is too low to read comfortably.
+
+
+9.2  BACKGROUND IMAGE (optional)
+--------------------------------
+Set background: "image" and point backgroundImage at a file you have placed with the app, for example "assets/background.jpg".
+
+9.2.1  SMALLER IS BETTER. It loads on every page and is cached offline.
+9.2.2  Maximum size is backgroundMaxKB (default 500 KB). A larger image is ignored and the grid is shown instead, with a note in the browser console.
+9.2.3  Use JPEG or WebP for photographs, PNG for graphics. Around 1600-1920 pixels wide is plenty.
+9.2.4  backgroundDim (0 to 1) washes the theme color over the image for readability. 0.6 is a good starting point.
+9.2.5 backgroundSize (cover, contain, or repeat) decides how your image fills the screen, and which one you want depends on what kind of image it is.
+
+  "cover" - scaled up until it covers the whole screen, with whatever hangs over the edges cropped off. Nothing shows through, but you never see the entire image, and how much is cropped differs between a phone held upright, a phone turned sideways, and a PC. Use it for photographs and large artwork, and keep anything that matters - a callsign, a logo - away from the edges, because on some screens it will be cut. The supplied foxtail_1x1.jpg is an example.
+
+  "contain" - scaled until all of it fits on screen, so the whole image is always visible. Because it keeps its proportions there will be empty space above and below, or at the sides, filled with your theme color. Use it when the image must be seen complete, such as a club logo. Be aware that a wide image on a phone held upright ends up quite small in the middle of the screen.
+
+  "repeat" - used at its own size and tiled across the screen like wallpaper. Use it for a small seamless pattern, roughly 100 to 300 pixels - a texture, a weave, a grid. It suits this well because a very small file covers any screen without scaling. A photograph tiled this way looks like a wall of postage stamps.
+
+If you are unsure, start with "cover". It suits most images and is the default.
+
+9.2.6 backgroundPosition decides which part of the image survives when "cover" crops it, and where the image sits within the empty space under "contain". "center" suits most images; "top" is useful when the top of the picture is the part you want kept.
+
+
+9.3  LOGO / FAVICON
+-------------------
+The fox image is the single file favicon.svg. Replace it with your own and the logo changes everywhere at once - top bar, Home hero, buttons - along with the browser-tab icon.
+
+9.3.1  Use an SVG. It is displayed at sizes from a tiny tab icon up to a large hero image. A PNG can be embedded inside an SVG if you need to.
+9.3.2  Keep it roughly SQUARE, with a TRANSPARENT background, and keep the file small.
+9.3.3  A favicon_foxtail.svg is included as an example. To use it, rename or delete favicon.svg, then rename favicon_foxtail.svg to favicon.svg.
+
+
+
+============================================================
+ SECTION 10 - ADMIN GUIDE
+============================================================
+
+10.1  THE ADMIN LOGIN
+--------------------
+admin.html and analytics.html are protected by your email/password admin account. Open either page and sign in. There is no link to these pages from the app; you type their addresses directly.
+
+Being signed in persists on that browser until you sign out, and the SAME login works on any device or browser, because its User ID (UID) never changes.
+
+The admin login runs independently of the participant app. Signing in as admin never disturbs the app, and using the app never signs you out of the admin pages.
+
+When signed out, those pages show only the sign-in box. When signed in, a small "Signed in as admin - Sign out" bar appears at the top.
+
+
+10.2  ADDING MORE ADMINS
+-----------------------
+Each admin is a separate email/password account, created exactly as in Section 3.5. To authorize an additional admin, add their UID in TWO places:
+
+10.2.1  In 0-config-admin.js, add it to the ADMIN_UIDS array:
+
+           const ADMIN_UIDS = [
+             'FIRST_ADMIN_UID',
+             'SECOND_ADMIN_UID'
+           ];
+
+       Then publish the changed file - re-upload it on Path A, or re-run firebase deploy on Path B.
+
+10.2.2  In firestore.rules, add it to the isAdmin() list:
+
+           request.auth.uid in ['FIRST_ADMIN_UID', 'SECOND_ADMIN_UID']
+
+       Then Publish the rules in the Firebase console.
+
+BOTH edits are required. Be careful with the punctuation, especially the apostrophes and the comma(s).  They needs to be exactly as shown above That single isAdmin() list controls the analytics dashboard AND admin-only actions such as Force Close. The admin.html and analytics.html pages themselves need no changes.
+
+
+10.3  CHANGING YOUR ADMIN EMAIL OR PASSWORD
+------------------------------------------
+On admin.html, signed in, use the "Change sign-in credentials" panel. Enter your current password (required), then a new email address and/or a new password.
+
+10.3.1  A PASSWORD change takes effect immediately.
+10.3.2  An EMAIL change sends a confirmation link to the NEW address, and the email only switches after you click that link. An email change therefore requires a real, reachable inbox.
+
+Your account's UID does not change, so ADMIN_UIDS and the security rules stay exactly as they are. There is nothing else to edit.
+
+If you would rather not use a real inbox, you can instead create a brand-new admin account in the Firebase console and swap its UID in. But a new account has a NEW UID, so you must update both places - see Section 10.2.
+
+
+10.4  GLOBAL SIGN-OUT (all your devices)
+---------------------------------------
+Signing out from the admin bar signs out that browser AND marks your other admin sessions to require a fresh login the next time they load or refresh an admin page. It is per-admin: signing yourself out never affects a different admin.
+
+It takes effect on the next page load or refresh of the other session, not instantly on an idle, untouched tab. Changing your admin password also invalidates all other sessions.
+
+
+10.5  THE ADMIN PANEL  (admin.html)
+----------------------------------
+  Registered Users - only populated when persistUsernames is true (Section 9.1). With the default of false, handles live only on each participant's own device, so this list is empty by design.
+
+  Active Hunts - lists the hunts that are still running.
+
+  Closed hunts awaiting cleanup - appears only when there is something in it. A hunt is normally deleted by its creator's own browser at the moment it closes; if that browser was shut or offline just then, the record survives. Those leftovers are listed here so you can clear them, rather than being counted among the active hunts.
+
+  Force Close - immediately closes a hunt and deletes its data. This requires the isAdmin() rule to be published (Section 5).
+
+  Blocked Usernames - shows the current block list. The list itself lives in the file blocked-usernames.txt: one name per line, and lines beginning with # are comments. To CHANGE the list you edit that file and publish it - see Section 10.9, because how you do that differs by hosting path.
+
+  Map Hosting - shows the map address currently configured and offers a "Check map hosting" button. One click tests that the file is reachable, that your host answers HTTP Range requests, and that the file is a valid PMTiles v3 archive (which is different from the PROTOMAPS BASEMAP v4 schema mentioned in section 2.4.5), then reports which of those failed. Section 8.6 lists what each result means. If mapDownloadUrl is set (Section 9.1), a link to ready-made map areas appears beneath it.
+
+  Change sign-in credentials - see Section 10.3.
+
+
+10.6  THE ANALYTICS DASHBOARD  (analytics.html)
+----------------------------------------------
+An anonymous, read-only summary of usage: totals (hunts, participations, bearings by source), rollups (average participants, average hunt length, how often a hunt produced an estimate), charts, and a per-hunt table.
+
+In keeping with the application's spirit of anonymity, locations are deliberately coarse - about a 12.5-mile grid - and no names, exact positions, or times are stored.
+
+The dashboard is READ-ONLY. To clear or reset analytics, delete the "analytics" and "analyticsHunts" collections in the Firebase console.  Firebase will create new "analytics" and "analyticsHunts" collections with the next hunt.  There is no danger in deleting these collections, except that it will permanently reset your analytics.
+
+
+10.7  CUSTOMIZING THE ACCOUNT EMAILS
+-----------------------------------
+By default, Firebase's verification and password emails say "...for <your-project-id>" and are signed "Your <your-project-id> team". To brand them:
+
+10.7.1  Set the project's public-facing name, at Settings > Project settings >
+        General > "Public-facing name":
+
+        https://console.firebase.google.com/project/PROJECT-ID/settings/general
+
+        Set it to your club or product name. The emails will then read "...for <Your Brand>" and "Your <Your Brand> team".
+
+10.7.2  Or edit the templates directly: Authentication > Templates > choose the email type > the pencil icon. You can adjust the sender name, the subject, and for some types the message body. Firebase allows only limited formatting.
+
+
+10.8  CLEANING UP ANONYMOUS USERS
+--------------------------------
+Every participant browser creates an anonymous account in Firebase > Authentication, and over time these accumulate under Authentication > Users. They hold no important data - hunt data is stored separately and purged when a hunt closes - so they are safe to delete manually. A browser that loses its anonymous account simply gets a new one on its next visit.  However, if the automatic deletion of anonymous users was enabled in section 3.3.3.1 then you will never have to manually delete these user by hand.  But if the functionality was not enabled during setup then you will be required to enable a one-time, free upgrade of your project to "Firebase Authentication with Identity Platform". Once enabled, anonymous accounts older than 30 days are deleted automatically, and anonymous sign-in no longer counts toward usage limits or billing quotas.
+
+To upgrade and turn it on (Google changes its menus periodically; this is the general path):
+
+10.8.1  Go to your project's Authentication settings.
+
+        https://console.firebase.google.com/project/PROJECT-ID/authentication/settings
+
+        In the menus: Authentication, then the "Settings" tab.
+
+10.8.2  Look for an option or banner to "Upgrade to Firebase Authentication with Identity Platform" and follow it. Currently, this is found under "Blocking Functions" and "User Activity Logging".  There is a free tier, and you do not need a paid plan for this app's usage. If you cannot find it under Authentication, you can also upgrade from the Google Cloud console under "Identity Platform".
+
+10.8.3  After upgrading, return to Authentication > Settings. Find the anonymous-user clean-up option - often under "User account management" or a similarly named heading - and enable "Auto-delete anonymous users" (30 days).
+
+10.8.4  Save.
+
+Notes:
+10.8.5  After you enable it, EXISTING anonymous accounts become eligible for deletion 30 days later; new ones, 30 days after they are created.
+10.8.6  This is optional housekeeping. The app runs perfectly well without it. It simply keeps the Users list tidy and stops anonymous sign-ins counting against quota.
+10.8.7  It never affects your email/password ADMIN accounts. Only anonymous ones.
+10.8.8  Turning it off later leaves any already-scheduled deletions scheduled.
+
+
+10.9  EDITING blocked-usernames.txt AND OTHER FILES
+--------------------------------------------------
+The admin panel displays the blocked-usernames list but does not edit it. The list is a plain file in your app folder, and how you change it depends on your hosting path. The same is true of a replaced favicon.svg or a background image.
+
+  PATH A (your own web host):
+      Edit blocked-usernames.txt directly on the host, using your File Manager or FTP client. The change is live as soon as you save. Participants may need one hard refresh to see it.
+
+  PATH B (Firebase Hosting):
+      There is no File Manager. Edit blocked-usernames.txt in your LOCAL app folder - the one you deploy from - then publish it by running:
+
+          firebase deploy
+
+      This is the general rule on Path B: your local folder is the master copy of your site. Anything you want to change, you change locally and then deploy. Keep that folder; do not delete it after your first deployment. See Section 11.3.
+
+
+
+============================================================
+ SECTION 11 - UPDATING TO A NEWER BUILD   (read before you update!)
+============================================================
+
+11.1  PRESERVE YOUR OWN FILES
+-----------------------------
+When you install a newer build, DO NOT blindly overwrite everything, or you will wipe your settings. PRESERVE these four files, which hold YOUR values:
+
+     0-config-firebase.js  your Firebase credentials
+     0-config-admin.js     your ADMIN_UIDS
+     0-config-foxhunt.js   your branding, content, units, thresholds
+     0-config-license.js   your site key
+
+Overwriting 0-config-license.js is the easiest of the four to do by accident, because unlike the others it is a single line and looks unimportant. If it happens, the app will tell you no site key is installed - paste your site key back in and you are done.
+
+setup.html is NOT one of these. You visit it in a browser but never edit it, so it carries nothing of yours and a newer build should replace it - keeping an old copy would leave you with a stale activation page.
+
+Also preserve anything else you added or changed yourself: a replaced favicon.svg, a background image, an edited blocked-usernames.txt, and your .pmtiles map file if you keep it in the app folder.
+
+Everything else - the .html pages, foxhunt.js, foxhunt-theme.js, foxhunt.css, sw.js, and the rest - can be replaced freely.
+
+A newer build sometimes ADDS new settings to 0-config-foxhunt.js. Your existing file will keep working (the app falls back to sensible defaults for anything missing), but to use a new feature you may need to copy its new key across from the new build's 0-config-foxhunt.js into yours. Build notes will say when this applies.
+
+
+11.2  UPDATING ON PATH A (your own web host)
+--------------------------------------------
+Two safe approaches - pick either:
+
+11.2.1  Upload the new build over the old, then re-apply your saved copies of the four files listed in Section 11.1; OR
+11.2.2  Upload everything EXCEPT those four files.
+
+Keep .htaccess in place (Section 6.2).
+
+
+11.3  UPDATING ON PATH B (Firebase Hosting)
+-------------------------------------------
+Your LOCAL app folder is the master copy of your site. You update that folder, then publish it. Keep it - do not delete it after your first deployment.
+
+11.3.1  Copy the new build's files into your local app folder, EXCEPT the four files in Section 11.1, which you keep as they are.
+
+11.3.2  Keep the new build's firebase.json. The one in the new build is correct and current - it is the same file you restored in Section 7.7. This is one file you SHOULD take from the new build.
+
+11.3.3  Keep your existing .firebaserc. This small file records which Firebase project you deploy to. It was created by firebase init, is not part of the build, and should simply be left alone. If it is missing, deployment will not know where to send your files.
+
+11.3.4  You do NOT need to run "firebase init" again. EVER. Init is a first-time-only step, and re-running it would overwrite firebase.json again (Section 7.7). Just deploy.
+
+11.3.5  From the app folder, run:
+
+            firebase deploy
+
+        That is the entire update. Your site is live within a minute or so.
+
+11.3.6  The .htaccess file in the package is ignored by Firebase Hosting. You may leave it in the folder; it does nothing there.
+
+
+11.4  AFTER UPDATING (both paths)
+---------------------------------
+Do ONE hard refresh - Ctrl+F5 - or close and reopen the tab. The app updates through a service worker that takes over on the next load, so a single refresh ensures that you and your users see the new version immediately.
+
+If a build's notes say the security rules changed, re-publish firestore.rules as well, keeping your admin UID or UIDs in isAdmin() (Section 5).
+
+
+
+============================================================
+ SECTION 12 - SECURITY RULES REFERENCE
+============================================================
+What the included firestore.rules governs:
+
+  isAdmin(): the single list of admin UIDs (Section 10.2). Controls analytics dashboard reads and admin-only actions.
+  users: participant profiles. Only used when persistUsernames is true.
+  hunts, submissions:  the live hunt data. Participants submit their own bearings; a hunt's creator, or an admin, can remove submissions; admins can Force Close.
+  adminRevocations: the per-admin global sign-out stamp (Section 10.4).
+  analytics, analyticsHunts: any signed-in device may WRITE the anonymous counts; only admins may READ them (the dashboard).
+  licenses, activations: the license system (Section 14).
+
+Whenever you add or remove an admin, update isAdmin() - and ADMIN_UIDS - and Publish.
+
+
+
+============================================================
+ SECTION 13 - INDEXING, robots.txt, DIRECTORY LISTINGS
+============================================================
+robots.txt (included) lets search engines index your PUBLIC information pages - Home, About, Contact, Getting Started, Instructions, Troubleshooting - and asks them NOT to index the app, login, admin, analytics, and setup pages. This is a sensible default; edit it only if you have a specific need.
+
+It is not a security control. It only guides well-behaved crawlers. Your real protection is the admin login and the Firestore security rules.
+
+Directory listings:
+
+  PATH A: the included .htaccess sets "Options -Indexes", so visitors cannot browse your folder's file list. It also keeps sw.js from being served stale. Keep it in place. If your host is not Apache, set the equivalent "no directory listing" option in its control panel.
+
+  PATH B: directory listings are off by default on Firebase Hosting, and the included firebase.json handles the sw.js caching rule. There is nothing for you to do. Firebase ignores .htaccess entirely.
+
+
+
+============================================================
+ SECTION 14 - LICENSE / ACTIVATION
+============================================================
+HOW YOU GET YOUR SITE KEY
+You buy Fox Pursuit on Gumroad and receive a LICENSE KEY on your receipt. You open setup.html in your browser on your own site and paste that key into the box on the page (Section 8.2); your purchase is checked once, and your site is issued a permanent SITE KEY beginning with "FP1".
+
+Keep BOTH. The Gumroad license key is your proof of purchase and lets you recover your site key at any time. The site key is what actually licenses your site.
+
+YOUR LICENSE IN ONE PARAGRAPH
+Your site key lives in 0-config-license.js (Section 8.2) and travels with your site. Every device that loads your pages is licensed by it automatically, so participants never enter anything and never need a key of their own. The key does not expire, covers this site, and includes free updates.
+
+HOW THE CHECK WORKS
+Your key carries its own proof. It was signed by the seller, and every copy of Fox Pursuit carries the matching public key - which can check a signature but cannot create one. So, the app verifies your license with mathematics alone, inside the browser, with no license server and no internet connection.
+
+That has a consequence worth stating plainly: nothing about your license depends on anyone remaining in business. If the seller's website disappears, if Gumroad closes, if this project is abandoned entirely - your installation keeps working, unchanged, indefinitely. There is no server to go down, no subscription to lapse, and no check-in that can fail. This was a deliberate design decision made by the author, and Section 2.4 applies the same thinking to your area maps.
+
+WHAT YOU CAN DO WITHOUT ASKING ANYONE
+  - Replace or wipe a device. Nothing to re-enter; the key is in your site, not in a browser.
+  - Move to a different web host or a different domain. Copy your files across, including 0-config-license.js, and the app runs. No transfer request, no reactivation, no contact with the seller.
+  - Add participants. There is no device count and nothing to register.
+
+WHAT REQUIRES HTTPS
+The license check needs the cryptography that browsers only provide over a secure connection. Over plain http the app shows a wall explaining this rather than running unverified. See Section 8.
+
+IF YOUR KEY IS REFUSED
+The app names the specific fault rather than giving a generic failure:
+  - "No site key has been installed" - the file still holds its placeholder.
+  - "could not be verified... may have been truncated" - the key is incomplete. Copy the WHOLE key again; it is about 150 characters and easy to cut short.
+  - "0-config-license.js could not be read" - the file has a syntax error, almost always a key pasted across several lines. It must be on one line.
+  - "not a Fox Pursuit site key" - something else was pasted in. A site key begins with FP1. and contains two dots within the string.
+
+Open setup.html in your browser on your own site and it will diagnose any of these: paste your key into the box and it will either confirm it or tell you what is wrong with it.
+
+IF YOU LOSE YOUR SITE KEY
+Look in the 0-config-license.js of any working deployment you still have, or wherever you saved it at Section 8.2.3. Failing that, open setup.html in your browser and paste your GUMROAD LICENSE KEY into the box again: the same site key is returned, not a new one, so you can recover it yourself as long as the license service is running. Failing all three, contact the seller with your purchase details.
+
+This is the reason Section 8.2.3 asks you to save the site key: it is the copy that depends on nobody.
+
+YOUR LICENSE COVERS ONE PRODUCTION SITE
+Because your site key lives in your own files, nothing technically prevents you from running more. The app has no license server and cannot be switched off remotely - that is deliberate, and explained above. It is a trade made in good faith, and these terms are the other half of it.
+
+Fine:
+  - A sandbox or test site alongside your production site.
+  - Two sites running at once for a short while when you move hosts or domains.
+  - Rebuilding your installation as often as you need to.
+
+Not fine:
+  - More than one production site on a single license.
+  - Passing the files to another club or group to run their own site.
+
+Activations are recorded when they happen, including the domain, and while this project is maintained that record is reviewed from time to time. A future version may also record - from the admin page only - the domain and license ID of installations in use. That is a record for the seller; nothing about running the app will ever depend on it.
+
+If a license appears to be used beyond these terms, expect an email first. Continued use beyond them ends support and updates, and future purchases may be declined. Your installation will not be switched off; there is deliberately no mechanism to do that. Adding one would break the guarantee that makes this software worth owning.  That is, the ability for the application to continue working after maintenance is gone.
+
+============================================================
+ SECTION 15 - TROUBLESHOOTING
+============================================================
+
+"This site is not finished setting up" on the sign-in screen, mentioning the Firebase configuration.
+    Your 0-config-firebase.js still holds placeholder values, or the values are wrong or incomplete. Paste the real firebaseConfig block from Settings > Project settings > General > "Your apps" (https://console.firebase.google.com/project/PROJECT-ID/settings/general). See Section 4.1. On Path B, remember to re-run firebase deploy after fixing the file - editing it locally is not enough. Verify what actually reached your server using Section 8.1.
+
+"This site is not finished setting up" on the sign-in screen, mentioning sign-in methods.
+    One of the two required sign-in providers is switched off in your Firebase project. Enable BOTH Anonymous and Email/Password under Authentication > Sign-in method (Section 3.3). Anonymous is the one usually missed. Nothing in your config files needs changing for this.
+
+setup.html says the license service could not be reached.
+    Activation is the one step that needs an outside service. Check your internet connection and try again in a few minutes. Your purchase is unaffected, and nothing about an already-activated site depends on that service. If it keeps failing, contact WA0MCS with your purchase details and a key will be sent directly; it goes in the same box.
+
+setup.html says your purchase could not be verified.
+    Check that you copied the WHOLE key from your Gumroad receipt and nothing else - no spaces, no surrounding text. If it still fails, and especially if the purchase was refunded or charged back, contact WA0MCS.
+
+"This site must be served over HTTPS."
+    Your address begins http:// rather than https://. The app deliberately stops here: over plain http the browser withholds location, compass, offline storage and the cryptography the license check needs, so the app cannot work properly even if it appeared to start. Install a certificate - most hosts provide one free - and load the site with https. Firebase Hosting (Path B) does this automatically. See Section 8.
+
+"No site key has been installed."
+    0-config-license.js still holds PASTE_YOUR_SITE_KEY. You have not activated yet, or the line was never pasted in. See Section 8.2.
+
+"The site key ... could not be verified" / "may have been truncated".
+    The site key is incomplete - the usual cause is copying only part of it. It is about 150 characters. Copy the whole thing and paste it again. Open setup.html in your browser to confirm before uploading.
+
+"0-config-license.js could not be read."
+    That file has a syntax error, and almost always the cause is a site key pasted across several lines. The whole key must sit on ONE line between the quotation marks. This can also happen to a perfectly good key that an email client wrapped - join the lines back up.
+
+"The value in 0-config-license.js is not a Fox Pursuit site key."
+    Something other than your site key was pasted in. A site key begins with FP1. and contains two dots. Your GUMROAD license key does NOT go in this file - you type it into setup.html in your browser, and setup.html gives you the site key that does go here.
+
+"Your PRIVATE key is in 0-config-license.js." (sellers only)
+    This message is for whoever issues site keys, not for buyers. If you see it, act on it immediately - see Section 14.
+
+"This account is not an admin. UID: ..."
+    The signed-in UID is not in ADMIN_UIDS in 0-config-admin.js. Put that exact UID in ADMIN_UIDS, publish the file, and hard-refresh. After any upgrade, confirm ADMIN_UIDS was not overwritten (Section 11.1).
+
+Analytics dashboard: "Missing or insufficient permissions."
+    The signed-in admin UID is not in the isAdmin() list in your PUBLISHED rules. Add it to isAdmin() - and to ADMIN_UIDS - and Publish (Section 5). Note that admin.html can work while analytics.html fails; analytics needs the isAdmin() rule specifically.
+
+Force Close: "Missing or insufficient permissions."
+    Same cause. Your published rules do not include the isAdmin() allowance on submission deletes. Re-publish the included firestore.rules with your UID in isAdmin().
+
+New files published, but you still see the old version.
+    The service worker is serving the cached build. Hard-refresh (Ctrl+F5), or close and reopen the tab once (Section 11.4).
+    On Path B, if this keeps happening to everyone and never resolves, suspect firebase.json. Confirm it still contains the "headers" block naming sw.js (Section 7.6), and re-deploy.
+
+sw.js does not appear in the browser's Network tab at all.
+    The app is failing before it registers the service worker. That almost always means a credentials problem - see the api-key-not-valid entry above. Get the app working first, then re-check sw.js.
+
+Map or compass does not work.
+    You must be on HTTPS. On http:// the browser blocks GPS, compass, and offline caching. Firebase Hosting is always HTTPS; on your own host, enable it.
+
+The map will not zoom out any further.
+    That is deliberate. Your .pmtiles file covers a fixed area, and beyond it there is no map to draw, so the app stops the zoom-out where your coverage ends rather than showing fragments against white. To zoom out further, build a .pmtiles covering a larger area (Section 2.3).
+
+The map area says "Map not configured."
+    tileUrl in 0-config-foxhunt.js is blank or still the placeholder. Set it to the address of your hosted .pmtiles file (Section 4.4). On Path B, re-run firebase deploy after editing.
+
+A participant's saved offline area shows as "no longer usable."
+    They downloaded it from a different map than the one now being served - most often because the served .pmtiles was changed (Section 2.2.3). The saved area cannot be used with a different map; they tap Remove to reclaim the space and download again for the current area. Offline areas are also per browser, so an area saved in one browser will not appear in a different browser on the same phone.
+
+The map is blank or grey, but the rest of the app works.
+    Almost always the map-data file: the host is not answering HTTP Range requests, the tileUrl address is wrong, the file is on a different domain without CORS, or the file was corrupted in upload. Do not guess - open the admin page and press "Check map hosting" (Section 10.5), which will tell you which of those it is. See also Section 2. (This is different from the "Map not configured" notice above: that notice means tileUrl is unset; a blank map means tileUrl is set but the file cannot be read correctly.)
+
+A blank page instead of the site (Path A).
+    Your host may have placed an empty index.php in the folder, and it is being served ahead of index.html. See Section 6.2.
+
+Verification emails show the wrong name.
+    Set your project's public-facing name (Section 10.7).
+
+Authentication > Users is full of anonymous accounts.
+    Normal - one per participant browser. They are safe to delete, or you can enable automatic clean-up (Section 10.8). Never delete your admin account.
+
+The app will not load after you edited 0-config-foxhunt.js.
+    A renamed key, or a missing comma or quotation mark, breaks the file. Undo your last edit. Change only the VALUES inside quotes.
+
+"'firebase' is not recognized..." (Path B).
+    Close the command window entirely and open a fresh one. A newly installed command is not visible to a window that was already open. If it still fails, re-run: npm install -g firebase-tools
+
+firebase deploy published the wrong thing, or an empty site (Path B).
+    You almost certainly ran it from the wrong folder. Every Firebase command must be run from the folder that contains the app files. Confirm with "dir" that you can see firebase.json before deploying (Section 7.4).
+
+
+
+============================================================
+ SECTION 16 - QUICK REFERENCE
+============================================================
+
+THE FOUR FILES YOU OWN (preserve on every upgrade; back them up off-device):
+    0-config-firebase.js  your Firebase credentials
+    0-config-admin.js     ADMIN_UIDS (the admin UID list)
+    0-config-foxhunt.js   branding / content / units / thresholds
+    0-config-license.js   your site key (begins FP1., one line)
+
+ADDITIONAL FILES YOU MAY OWN (to preserve on every upgrade if you have made manual edits)
+    a replaced favicon.svg
+    a background image
+    an edited blocked-usernames.txt
+    the .pmtiles map file if you serve your own file from the maps subdirectory
+
+YOUR SITE MUST BE https://
+    Over plain http the app shows a wall and stops. Location, compass, offline
+    storage and the license check all require a secure connection.
+
+YOUR LICENSE (required):
+    Activate at setup.html in your browser on your published site (Section
+    8.2): paste your
+    GUMROAD LICENSE KEY, get a permanent SITE KEY back, and replace the whole
+    const FOXHUNT_SITE_KEY line in 0-config-license.js with the line it gives
+    you. SAVE THE SITE KEY OFF THIS HOST. It licenses every device
+    that loads your site - participants enter nothing. After activation it is
+    verified offline, with no license server, so it cannot stop working.
+    Activate the day you buy, not on hunt day.
+
+YOUR MAP (required for the map to work):
+    Host a .pmtiles file for your area; set tileUrl in 0-config-foxhunt.js.
+    The host must answer HTTP Range requests. See Section 2 (the map) and Section 4.4 (tileUrl).
+
+ADDING AN ADMIN = TWO EDITS:
+    1. 0-config-admin.js  ->  ADMIN_UIDS       (then publish the file)
+    2. firestore.rules   ->  isAdmin()        (then Publish in the console)
+
+ADMIN PAGES (type the URL directly; there are no links to them):
+    admin.html       admin panel - hunts, force close, blocked names, credentials
+    analytics.html   read-only usage dashboard
+
+TO PUBLISH A CHANGE:
+    Path A:   upload the changed file to your host.
+    Path B:   from the app folder, run:  firebase deploy
+
+AFTER ANY UPDATE:
+    Hard-refresh once (Ctrl+F5).
+
+PATH B, IN SHORT:
+    First time:   install Node.js  ->  npm install -g firebase-tools  ->  firebase login
+                  ->  open a terminal IN the app folder  ->  firebase init hosting
+                  ->  RESTORE firebase.json from the download  ->  firebase deploy
+    Every time after that:   firebase deploy
+    Never run "firebase init" again - it would overwrite firebase.json.
+
+Questions about the product can go to the seller listed on your purchase.
+
+============================================================

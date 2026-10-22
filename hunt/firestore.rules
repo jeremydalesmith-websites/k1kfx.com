@@ -1,0 +1,92 @@
+// ============================================================
+//  Fox Pursuit — Firestore Security Rules
+//  Apply these rules in Firebase Console → Firestore → Rules
+//
+//  NOTE: This file covers BOTH the Fox Pursuit app collections
+//  AND the license system collections in the same project.
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admins are identified by their email/password account UID(s).
+    // Add each admin UID here AND in ADMIN_UIDS in 0-config-admin.js.
+    // This one list is the only place to edit when adding/removing admins.
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.uid in ['YOUR_ADMIN_UID'];
+    }
+
+    // ── User profiles (only used when persistUsernames: true) ──
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if request.auth != null;
+    }
+
+    // ── Hunts ─────────────────────────────────────────────────
+    match /hunts/{huntId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.createdByUid == request.auth.uid
+                    && request.resource.data.closed == false;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+
+      match /submissions/{subId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+                      && request.resource.data.uid == request.auth.uid;
+        allow delete: if request.auth != null
+                      && (resource.data.uid == request.auth.uid
+                          || get(/databases/$(database)/documents/hunts/$(huntId)).data.createdByUid == request.auth.uid
+                          || isAdmin());
+        allow update: if false;
+      }
+    }
+
+    // ── Admin session revocation (global sign-out) ───────────
+    // Each admin can read/write only their own revocation stamp.
+    match /adminRevocations/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Analytics (anonymous, counts-only) ────────────────────
+    // Any signed-in user may WRITE (the app records anonymous totals at hunt
+    // close). READ is limited to admins (see isAdmin above). No deletes; clear
+    // or reset analytics in the Firebase console.
+    match /analytics/{doc} {
+      allow write: if request.auth != null;
+      allow read:  if isAdmin();
+    }
+    match /analyticsHunts/{doc} {
+      allow write: if request.auth != null;
+      allow read:  if isAdmin();
+    }
+
+    // ── LICENSE RECORDS (v71: RECORD-KEEPING, NOT ENFORCEMENT) ──
+    // Since v71 a license key carries its own ECDSA signature and is verified
+    // OFFLINE, in the browser, against a public key baked into the package. No
+    // document in this project decides whether anyone's app runs. These two
+    // collections exist so the seller can see who activated what and where.
+    //
+    // Read that plainly: these rules cannot verify a signature, so they cannot
+    // stop someone forging a record here. That buys a forger nothing: since
+    // v71.6 NOTHING in the app reads this collection, or any other, to decide
+    // whether it runs. The licence is checked offline against a public key.
+    match /activations/{key} {
+      allow get:    if true;   // the app reads one activation by its key
+      allow list:   if false;  // nobody can enumerate all activations
+      // Well-formed doc whose id matches its key field (blocks casual junk).
+      allow create: if request.resource.data.key == key
+                    && request.resource.data.keys().hasAll(['key','domain']);
+      // Re-activation allowed ONLY if the domain is unchanged - blocks hijacking a
+      // customer's activation onto another domain. Genuine transfers: Andrew edits
+      // in the console (bypasses rules). See FoxPursuit_LICENSE_MAINTENANCE.
+      allow update: if resource.data.domain == request.resource.data.domain;
+      allow delete: if false;  // Andrew deletes via console to revoke
+    }
+
+  }
+}

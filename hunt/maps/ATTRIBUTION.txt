@@ -1,0 +1,37 @@
+Map data in this file
+=====================
+
+This file contains vector map tiles in PMTiles format.
+
+  (c) OpenStreetMap contributors
+
+The map data is derived from OpenStreetMap (https://www.openstreetmap.org)
+and is licensed under the Open Database License (ODbL) v1.0:
+
+  https://opendatacommons.org/licenses/odbl/1-0/
+  https://www.openstreetmap.org/copyright
+
+The tiles were produced from Protomaps daily builds
+(https://protomaps.com), which are built from OpenStreetMap data.
+
+KEEP THIS FILE WITH YOUR MAP
+----------------------------
+If you downloaded a .pmtiles file on its own, save this text alongside it.
+It is the record of where the map data came from and the terms it carries.
+If you self-host the map for a Fox Pursuit installation (SETUP.txt Section
+2.4), keep this file in the same folder as the .pmtiles.
+
+What this means if you re-host or redistribute this data
+--------------------------------------------------------
+- You must keep this attribution: the credit
+  "(c) OpenStreetMap contributors" must remain visible to anyone who
+  uses the map (the Fox Pursuit app shows it automatically on the map;
+  do not remove it).
+- The map data itself remains available under ODbL. You are free to
+  use and redistribute it under those same terms.
+
+This file covers the MAP DATA only. The Fox Pursuit software and its
+distribution package are separate and are governed by their own license
+(see LICENSE / SETUP for the Fox Pursuit application); that license does
+not restrict your rights to the OpenStreetMap data above, which are
+governed by ODbL.

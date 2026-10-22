@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Purchase</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="foxhunt.css"/>
+  <script src="0-config-foxhunt.js"></script>
+  <script src="foxhunt-theme.js"></script>
+</head>
+<body class="grid-bg">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="0-config-firebase.js"></script>
+<script src="foxhunt.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => { insertNav(true); insertFooter(); fhOptionalAuth(); });
+</script>
+
+<div class="page-wrap">
+  <h1 class="page-title">Purchase</h1>
+  <p class="page-subtitle">Two editions, one-time purchase, no subscription</p>
+
+  <!-- ============================================================
+       EDITABLE CONTENT BELOW
+       ============================================================ -->
+
+  <div class="card" style="border-left:3px solid var(--success,#3ecf8e)">
+    <p><strong>Hunting on this site?</strong> You do not need to buy anything, unless you wish
+    to hunt outside of the region hosted on this site. The license covers everyone who joins
+    this site's hunts &mdash; enter your callsign and hunt. If you do want to hunt outside the
+    region hosted here, consider purchasing the Solo application for yourself.</p>
+  </div>
+
+  <!-- SOLO: when published, remove "&mdash; coming soon" from the heading and add this
+       button as the last line of the Solo card:
+       <a class="btn primary" href="https://foxpursuit.gumroad.com/l/solo" target="_blank" rel="noopener">Buy Solo &mdash; $9.95</a> -->
+  <div class="section-heading">Fox Pursuit Solo &mdash; for one operator &mdash; coming soon</div>
+  <div class="card">
+    <p><strong>$9.95, one time.</strong> Direction finding on your own: take a bearing, move,
+    take another, repeat; Solo plots each one on your map and shows where they cross &mdash; with the
+    same probability area as this site. Nothing to host, no account, no sign-in. It runs at
+    foxpursuit.com/solo and installs to your phone's home screen like an app. Download any of
+    the ready-made map regions and hunt with no data signal.</p>
+    <p><strong>Try it.</strong> Open the application. You can run as many six-minute trial
+    hunts as you would like without making a purchase. If it suits your needs, purchase a
+    license. <strong>Members of this site get $2 off.</strong> Use referral code
+    <code style="font-family:var(--mono);color:var(--accent)">SOLO2</code> at checkout.</p>
+  </div>
+
+  <div class="section-heading">Fox Pursuit Team &mdash; for a club or group</div>
+  <div class="card">
+    <p><strong>$47.95, one time, one site, lifetime license.</strong> The site you are on now
+    is a Fox Pursuit Team installation. Team allows simultaneous solo hunts, or, if
+    collaboration is desired, it can put every hunter's bearings on one shared map in real
+    time &mdash; with unlimited hunters and offline street-level maps. As the site host you
+    have admin and analytics pages, and free updates. Your club or organization hosts it on
+    its own web space (or Firebase's free hosting) with a free Firebase project &mdash; about
+    an hour of set-up following the included guide. No programming knowledge required.</p>
+    <p>Want this for your own club? The full story, a live demo you can try from anywhere, and
+    the answers to the usual questions are at
+    <a href="https://foxpursuit.com/" target="_blank" rel="noopener">foxpursuit.com</a>.</p>
+    <a class="btn primary" href="https://foxpursuit.gumroad.com/l/team" target="_blank" rel="noopener">Buy Team &mdash; $47.95</a>
+  </div>
+
+  <div class="section-heading">Which one?</div>
+  <p>Team is for a club or organization hosting fox hunts. Members can use the application as
+  individuals competing against each other, or multiple members can collaborate with
+  everyone's bearings appearing on everyone's map, without any need for a net control. Solo is
+  for one person: your bearings stay on your phone and nothing is shared. Both use the same
+  maps and the same triangulation. A Team license does not include Solo; a Solo license does
+  not run a club site.</p>
+
+  <div class="section-heading">After you buy Team</div>
+  <p><strong>1. Your receipt</strong> carries the download and your Gumroad license key. Keep it.<br>
+  <strong>2. Set up</strong> &mdash; unzip the package and follow SETUP.txt. You can place the
+  application on either your own host or on the free Firebase hosting.<br>
+  <strong>3. Activate once</strong> &mdash; paste the Gumroad key on the setup page and you are
+  issued a permanent site key.<br>
+  <strong>4. Hunt.</strong> From then on the site verifies its own key and never contacts anyone.</p>
+
+  <div class="section-heading">The license, in plain words</div>
+  <p>One purchase, one site, for life &mdash; no renewal, no per-member fee, free updates. The
+  key is not tied to a web address: move hosts or domains and the same files and key carry
+  on. It is verified by mathematics inside the browser, not by a server, so the installation
+  keeps working even if Fox Pursuit itself disappears. Refunds: 14 days, no questions, for
+  either edition &mdash; ask through your Gumroad receipt.</p>
+
+  <p>Questions before buying: the contact link on
+  <a href="https://foxpursuit.com/#contact" target="_blank" rel="noopener">foxpursuit.com</a>.</p>
+
+  <!-- ============================================================
+       END EDITABLE CONTENT
+       ============================================================ -->
+</div>
+</body>
+</html>

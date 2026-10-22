@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Instructions</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="foxhunt.css"/>
+  <script src="0-config-foxhunt.js"></script>
+  <script src="foxhunt-theme.js"></script>
+  <style>
+    /* Quick "on this page" jump links */
+    .toc { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:1.6rem; }
+    .toc a {
+      font-family:var(--mono); font-size:0.68rem; text-decoration:none;
+      color:var(--muted); border:1px solid var(--border); border-radius:3px;
+      padding:0.28rem 0.6rem; transition:all 0.2s;
+    }
+    .toc a:hover { border-color:var(--accent); color:var(--accent); }
+
+    .step-list { list-style:none; counter-reset:steps; margin-top:0.5rem; }
+    .step-list li {
+      counter-increment:steps; position:relative; padding-left:2.1rem;
+      margin-bottom:0.9rem; font-size:0.9rem; line-height:1.6;
+    }
+    .step-list li::before {
+      content:counter(steps); font-family:var(--mono); font-size:0.72rem;
+      color:#000; background:var(--accent); border-radius:50%;
+      width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+      position:absolute; left:0; top:0.15rem;
+    }
+    /* Button labels: distinct colored text shown inline (no box, so it can't
+       balloon inside flex layouts and renders the same across browsers). */
+    .badge {
+      font-family:var(--mono); font-size:0.82em; color:var(--accent);
+      white-space:nowrap; letter-spacing:0.02em;
+    }
+    table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5rem; }
+    th { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.1em; text-transform:uppercase;
+         color:var(--muted); text-align:left; padding:0.4rem 0.7rem; border-bottom:1px solid var(--border); }
+    td { padding:0.5rem 0.7rem; border-bottom:1px solid rgba(42,47,61,0.4); line-height:1.5; font-size:0.86rem; }
+    tr:last-child td { border-bottom:none; }
+    td:first-child { font-family:var(--mono); color:var(--accent); font-size:0.78rem; white-space:nowrap; }
+    .tip-list { list-style:none; }
+    .tip-list li {
+      padding:0.55rem 0; border-bottom:1px solid var(--border);
+      font-size:0.88rem; line-height:1.6; display:flex; gap:0.6rem;
+    }
+    .tip-list li:last-child { border-bottom:none; }
+    .summary-box {
+      background:rgba(var(--accent-rgb),0.06); border:1px solid rgba(var(--accent-rgb),0.2);
+      border-radius:4px; padding:1.2rem 1.4rem; margin-bottom:1.5rem;
+      font-size:0.9rem; line-height:1.75;
+    }
+    /* Callouts */
+    .note, .warn {
+      border-radius:4px; padding:0.8rem 1rem; margin-top:0.9rem;
+      font-size:0.84rem; line-height:1.6; display:flex; gap:0.6rem;
+    }
+    .note { background:rgba(91,156,246,0.08); border:1px solid rgba(91,156,246,0.28); }
+    .warn { background:rgba(240,120,40,0.08); border:1px solid rgba(240,120,40,0.30); }
+    .note .ico, .warn .ico { flex-shrink:0; }
+    .legend-dot {
+      display:inline-block; width:11px; height:11px; border-radius:50%;
+      vertical-align:middle; margin-right:0.35rem;
+      border:1.5px solid #0d0f14;
+    }
+    .muted-note { margin-top:0.8rem; color:var(--muted); font-size:0.82rem; line-height:1.6; }
+  </style>
+</head>
+<body class="grid-bg">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="0-config-firebase.js"></script>
+<script src="foxhunt.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    insertNav(true); insertFooter();
+    fhOptionalAuth();
+    // Reflect this site's actual configuration in the instructions.
+    try {
+      var c = (typeof FOXHUNT_CONFIG !== 'undefined') ? FOXHUNT_CONFIG : {};
+      var dur  = (c.huntDurationHours != null) ? c.huntDurationHours : 4;
+      var addm = (c.addTimeMinutes   != null) ? c.addTimeMinutes   : 30;
+      var bm   = (c.bearingLineMiles != null) ? c.bearingLineMiles : 10;
+      var metric = (c.units === 'metric');
+      document.querySelectorAll('.cfg-duration').forEach(function (e) { e.textContent = dur; });
+      document.querySelectorAll('.cfg-addtime').forEach(function (e) { e.textContent = addm; });
+      document.querySelectorAll('.cfg-bearing').forEach(function (e) { e.textContent = metric ? Math.round(bm * 1.60934) : bm; });
+      document.querySelectorAll('.cfg-bearing-unit').forEach(function (e) { e.textContent = metric ? 'km' : 'miles'; });
+      document.querySelectorAll('.cfg-acc-ex').forEach(function (e) { e.textContent = metric ? '±15 m' : '±50 ft'; });
+      // "In a nutshell" summary text from config; hide the box if blank.
+      var nut = document.getElementById('nutshell-text');
+      var nutBox = document.getElementById('nutshell-box');
+      var nutTxt = (c.nutshell != null) ? String(c.nutshell) : '';
+      if (nut) nut.textContent = ' ' + nutTxt;
+      if (nutBox && !nutTxt.trim()) nutBox.style.display = 'none';
+      // Extra host-configurable content below the built-in instructions.
+      renderContentBlocks('instructions-content', Array.isArray(c.instructions) ? c.instructions : []);
+    // FP12 (C30): optional content at the top of the page.
+    try {
+      var topEl = document.getElementById('instructionsTop-content');
+      renderContentBlocks('instructionsTop-content', Array.isArray(c.instructionsTop) ? c.instructionsTop : []);
+      if (topEl && topEl.innerHTML.trim()) topEl.style.display = 'block';
+    } catch (e) {}
+      // Handle-storage note in the passwordless sign-in steps (shown only in no-password mode).
+      var ihn = document.getElementById('instr-handle-note');
+      if (ihn) {
+        ihn.textContent = (c.persistUsernames === false)
+          ? 'Your handle is kept only on your own device — it is never stored on this site\u2019s servers. Clear your browser or switch devices and you simply enter it again.'
+          : 'Your handle is saved so it\u2019s there next time you return on the same device.';
+        ihn.style.display = '';
+      }
+    } catch (e) {}
+  });
+</script>
+
+<div class="page-wrap">
+  <h1 class="page-title">Instructions</h1>
+  <p class="page-subtitle">How to use the Fox Pursuit direction-finding app</p>
+  <!-- FP12 (C30): host content at the TOP of the page - the "instructionsTop" blocks in
+       0-config-foxhunt.js (same format as the blocks at the bottom). Hidden when
+       the key is missing or every block is empty. -->
+  <div id="instructionsTop-content" style="display:none;background:rgba(var(--accent-rgb),0.06);border:1px solid rgba(var(--accent-rgb),0.2);border-radius:4px;padding:1.2rem 1.4rem;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.75;"></div>
+
+  <!-- QUICK NAV -->
+  <div class="toc">
+    <a href="#start">Getting Started</a>
+    <a href="#hunt">Create / Join</a>
+    <a href="#screen">The Hunt Screen</a>
+    <a href="#gps">GPS</a>
+    <a href="#compass">Bearing</a>
+    <a href="#manual">Tap-to-Place</a>
+    <a href="#submit">Submitting</a>
+    <a href="#offline">Working Offline</a>
+    <a href="#map">Map Controls</a>
+    <a href="#results">Reading Results</a>
+    <a href="#manage">Hunt Management</a>
+    <a href="#devices">Device Tips</a>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-box" id="nutshell-box">
+    <strong style="font-family:var(--mono);color:var(--accent)">In a nutshell:</strong>
+    <span id="nutshell-text"></span>
+  </div>
+
+  <!-- GETTING STARTED -->
+  <div class="section-heading" id="start">Getting Started</div>
+  <div class="card">
+    <!-- Passwordless mode -->
+    <div id="auth-passwordless">
+      <ol class="step-list">
+        <li>Open the site. You'll see a single <strong>Username / Callsign</strong> field — no password is required on this site.</li>
+        <li>Enter your callsign or a handle and tap <span class="badge">Enter →</span>. Your name only needs to be unique within an active hunt, and it will display in uppercase.</li>
+        <li id="instr-handle-note" style="display:none"></li>
+        <li>You're taken to the Home page. Tap <span class="badge">Hunt</span> in the menu to reach the Dashboard where you create or join a hunt.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- CREATE / JOIN -->
+  <div class="section-heading" id="hunt">Creating and Joining a Hunt</div>
+  <div class="card">
+    <p><strong>Create a hunt:</strong> enter a unique hunt name (for example, <em>FoxPursuit-June-A</em>) and tap Create. The hunt stays active for <span class="cfg-duration">4</span> hours. Share the exact name with everyone who'll participate.</p>
+    <p><strong>Join a hunt:</strong> enter the hunt name from the organizer and tap Join (hunt names are not case-sensitive, but the spelling must match). You go straight to the live map.</p>
+    <p>Hunt names are never listed publicly. Only people who know the name can join, so pick something you can share but others won't guess.</p>
+    <p style="margin-bottom:0"><strong>Coming back later:</strong> log in with the same name and an <span class="badge">Open Current Hunt Map</span> banner takes you straight back to a hunt you created — on any device, even after signing out. To return to a hunt you'd joined, just enter its name again; your spot is kept.</p>
+  </div>
+
+  <!-- THE HUNT SCREEN -->
+  <div class="section-heading" id="screen">The Hunt Screen</div>
+  <div class="card">
+    <p style="font-size:0.9rem;line-height:1.6;margin-bottom:0.4rem">The bar across the top of the hunt screen shows, from left to right:</p>
+    <table>
+      <tr><th>Item</th><th>Meaning</th></tr>
+      <tr><td>● dot</td><td>Connection status — <span style="color:var(--success)">green</span> when online, <span style="color:var(--error)">red</span> when offline.</td></tr>
+      <tr><td><img src="favicon.svg" alt="" style="width:1.1em;height:1.1em;vertical-align:-0.2em"/> name</td><td>The current hunt's name.</td></tr>
+      <tr><td>timer</td><td>Countdown until the hunt auto-closes. It blinks red in the final stretch.</td></tr>
+      <tr><td>+<span class="cfg-addtime">30</span>m</td><td>Hunt creator only — adds <span class="cfg-addtime">30</span> minutes to the timer.</td></tr>
+      <tr><td>Close Hunt</td><td>Hunt creator only — ends the hunt early.</td></tr>
+      <tr><td>⌂ Home</td><td>Returns to the Home page (your hunt keeps running).</td></tr>
+      <tr><td>Sign Out</td><td>Signs you out of the app.</td></tr>
+    </table>
+    <p class="muted-note">On phones (held upright or sideways) the control panel starts hidden. Tap <span class="badge">Show Controls</span> to open it over the map and <span class="badge">Hide Controls</span> to close it. It opens with the everyday items; tap <span class="badge">Show advanced ▾</span> for the rest: the GPS and compass details, typed and manual bearings, Map Options and the panel's Submit button. On a computer the panel stays beside the map with everything shown; <span class="badge">Hide advanced ▴</span> tucks the advanced items away. Android tablets work like phones.</p>
+  </div>
+
+  <!-- GPS -->
+  <div class="section-heading" id="gps">GPS Location</div>
+  <div class="card">
+    <p>When you open a hunt, the app starts your GPS automatically and keeps your position updated as you move. You'll need to allow location access if your device asks. If location access is denied, or your device has no GPS, you'll enter your location and bearing manually instead.</p>
+    <p style="margin-bottom:0">On a phone the GPS status line shows at the bottom-left of the map. In the control panel it sits under the <strong>GPS Location</strong> heading, just above the Latitude and Longitude fields (on a phone, tap <span class="badge">Show advanced ▾</span> to see them). It first shows <span class="badge">Requesting GPS…</span>; once the device locks onto your position it turns green and shows how tight the estimate is — for example, <span class="badge">GPS Accuracy: <span class="cfg-acc-ex">±50 ft</span></span>. Your latitude and longitude fill in by themselves, and you can tap either field to type or adjust a value by hand. Accuracy improves outdoors with a clear view of the sky.</p>
+    <p class="muted-note" style="margin-bottom:0">On tablets, Chrome or Edge give the most reliable GPS. Firefox on some tablets keeps asking for location permission and may not update — if that happens, switch to Chrome or Edge, or place your location manually.</p>
+  </div>
+
+  <!-- BEARING -->
+  <div class="section-heading" id="compass">Submitting a Location &amp; Bearing</div>
+  <div class="card">
+    <p>The compass starts automatically on Android and desktop. On iPhone you must turn it on with a tap: the app opens the control panel for you, so tap the <span class="badge">🧭 Enable Compass</span> button in the box at the top of the panel and choose <strong>Allow</strong> when iOS asks for Motion &amp; Orientation access — iOS only grants this from that button tap. (If the panel is closed, tap <span class="badge">Show Controls</span> first. If you tapped Deny, clear this site's website data in Settings and reload, or just enter the bearing by hand.)</p>
+    <p>A small status line under the <strong>Compass Bearing</strong> heading (on a phone, also at the bottom-left of the map, as <span class="badge">🧭 123° NE</span>) always shows where the current bearing is coming from — <span class="badge">Compass: 123° NE</span> when it's reading the magnetometer, <span class="badge">GPS heading: 90° E · ±8°</span> when it's using your direction of travel, or <span class="badge">· hold</span> in the moments right after you stop.</p>
+    <p style="margin-bottom:0.4rem">There are three ways to submit a location and bearing:</p>
+    <ol class="step-list">
+      <li><strong>Stand and point.</strong> Hold the device flat and point the top — or a side, if you're in landscape — directly at the strongest signal. Keep still a moment so the reading settles, then press Submit → on the map (Submit Location + Bearing in the panel). While you're stationary the app uses the magnetic compass for the bearing.</li>
+      <li><strong>Walk toward the signal.</strong> Where there's open space, hold the device flat and walk in a straight line directly toward the signal — at least 20 feet, and the farther the better (about 60–90 feet gives the cleanest result). As you walk, the bearing holds the compass (the way you're facing) until the GPS heading is solid, then snaps to the GPS heading (the way you walked) — watch the status line to see the switch. Stop, and within about 5 seconds press Submit → on the map (Submit Location + Bearing in the panel); the GPS heading is held that long, then reverts to the compass on its own. This is especially useful when something is disturbing your compass — most often in or near a vehicle.<span style="display:block;margin-top:0.6rem"><strong>On iPhone:</strong> Apple's iOS reports your speed and position to web pages more slowly than Android does, so at a normal walking pace an iPhone won't gather a usable GPS heading before you've gone too far — this is a limitation of iOS, not the app. The feature still works on iPhone at a jog or faster, and it's genuinely useful at driving speeds, which is exactly when you'd want it (a vehicle throws off the compass). At walking speed on an iPhone, rely on the compass — after checking that it's accurate — or enter the bearing by hand.</span></li>
+      <li><strong>Enter it yourself.</strong> You can always override the sensors. To place a reading on the map, tap <span class="badge">Manual Entry</span> on the map (phones), or <span class="badge">Add Manual Location &amp; Bearing to Map</span> in the panel's advanced items. Your current location is marked with a red ✕ — tap the ✕ to use it, or tap anywhere else on the map to set a different spot — then tap the direction of the signal (tracking pauses and resumes on its own). To type exact values instead, tap <span class="badge">⏹ Stop Tracking</span> so GPS won't overwrite your entries, open the advanced items (Show advanced), enter the latitude, longitude, and bearing, then submit — and tap Stop Tracking again to resume. Use manual entry when you already know the bearing, when the device has no compass or a clearly-wrong one and you can't walk far enough for a GPS bearing, or when you're plotting coordinates a teammate radioed in.</li>
+    </ol>
+    <p class="muted-note">0° = North · 90° = East · 180° = South · 270° = West.</p>
+    <div class="warn">
+      <span class="ico">🧭</span>
+      <span><strong>"Compass needs calibration — wave phone in figure-8":</strong> your readings are drifting. Move the phone through a figure-8 motion a few times in the air to recalibrate the magnetometer, then try again.</span>
+    </div>
+    <div class="warn">
+      <span class="ico">🧲</span>
+      <span><strong>"Magnetic interference — move away from metal objects":</strong> something nearby is distorting the compass (a vehicle, railing, speaker, or magnet). Step a few feet away from metal and electronics and the reading will settle.</span>
+    </div>
+  </div>
+
+  <!-- TAP TO PLACE -->
+  <div class="section-heading" id="manual">Placing a Reading by Tapping the Map</div>
+  <div class="card">
+    <p style="font-size:0.9rem;line-height:1.6">If you'd rather not use live GPS and compass — for example, plotting a teammate's reported position — you can place a reading directly on the map:</p>
+    <ol class="step-list">
+      <li>Tap <span class="badge">Manual Entry</span> on the map (phones), or <span class="badge">Add Manual Location &amp; Bearing to Map</span> in the panel's advanced items. Live tracking pauses while you place the reading.</li>
+      <li>Your current location is marked with a red ✕. Tap the ✕ to use it as your location, or tap anywhere else on the map to drop it somewhere different.</li>
+      <li>Tap a second time in the direction of the signal to set the bearing. A preview marker and line appear.</li>
+      <li>Happy with it? Tap <span class="badge">Submit →</span> on the map (or <span class="badge">Submit Location + Bearing →</span> in the panel). Want to redo it? Tap <span class="badge">Cancel Manual</span> on the map (or <span class="badge">✕ Clear Manual Entry &amp; Start Over</span> in the panel). Tracking resumes on its own once you submit or clear.</li>
+    </ol>
+    <p class="muted-note">The manual button returns as soon as your reading is submitted, so you can place several in a row.</p>
+  </div>
+
+  <!-- SUBMITTING -->
+  <div class="section-heading" id="submit">Submitting a Reading</div>
+  <div class="card">
+    <ol class="step-list">
+      <li>With a location and a bearing set, tap <span class="badge">Submit →</span> on the map, or <span class="badge">Submit Location + Bearing →</span> in the panel's advanced items. If something is missing, a message on the map says what.</li>
+      <li>A colored marker drops at your location and a dashed line extends <span class="cfg-bearing">10</span> <span class="cfg-bearing-unit">miles</span> along your bearing.</li>
+      <li>Everyone else in the same hunt sees your marker appear on their map instantly.</li>
+      <li>You can submit as many readings as you like from different spots — each adds another marker and line in your color.</li>
+      <li>To remove one, find it in <strong>All Submissions</strong> and tap <strong>delete</strong>. You can delete your own; the hunt creator can delete any.</li>
+    </ol>
+  </div>
+
+  <!-- OFFLINE -->
+  <div class="section-heading" id="offline">Working Offline</div>
+  <div class="card">
+    <p style="font-size:0.9rem;line-height:1.6">Fox hunts often happen where cell coverage is poor. The app is built to keep working through dead zones.</p>
+    <ul class="tip-list">
+      <li><span>🗺</span><span><strong>Maps are cached automatically.</strong> Soon after your first GPS fix, the app quietly downloads map tiles around your area for offline use. You'll see <span class="badge">Caching map tiles: 45%</span> appear briefly under the Submit button. It also caches around each new submission location, so the shared hunt area fills in as everyone reports.</span></li>
+      <li><span>🔴</span><span><strong>The connection dot turns red</strong> when you lose signal, and you'll see a brief "Offline" note.</span></li>
+      <li><span>📨</span><span><strong>Submissions queue while offline.</strong> A number appears on the Submit button showing how many readings are waiting. They send automatically the moment you reconnect, and the badge clears itself.</span></li>
+      <li><span>🟢</span><span>When signal returns, the dot turns green and a short "Back online — syncing…" note appears as your queued readings upload.</span></li>
+    </ul>
+    <div class="note">
+      <span class="ico">💡</span>
+      <span>Let the map finish caching while you still have signal — pan around the hunt area once so those tiles are stored before you head into a weak-coverage spot.</span>
+    </div>
+  </div>
+
+  <!-- MAP CONTROLS -->
+  <div class="section-heading" id="map">Map Controls and Options</div>
+  <div class="card">
+    <table>
+      <tr><th>Control</th><th>What it does</th></tr>
+      <tr><td>⊕ Fit All</td><td>Zooms to show every marker and bearing line at once.</td></tr>
+      <tr><td>🧭 Drive to Fox Estimate</td><td>Appears once two or more bearings cross and a probable area exists — opens turn-by-turn directions to the estimated fox location. On phones it is an on-map button; it is also in the panel's advanced items (always shown on a computer).</td></tr>
+      <tr><td>Show usernames</td><td>Toggles the name labels next to each marker.</td></tr>
+      <tr><td>Show bearing lines</td><td>Toggles the dashed directional lines.</td></tr>
+      <tr><td>Show probable area</td><td>On by default. The fox is inside the red outline about 95% of the time, and the darker center is its single most likely spot. See Reading the Results below.</td></tr>
+      <tr><td>Tap a marker</td><td>Opens a popup with that person's name, coordinates, and bearing.</td></tr>
+      <tr><td>Show / Hide Controls</td><td>On phones, shows or hides the control panel.</td></tr>
+      <tr><td>Show advanced ▾ / Hide advanced ▴</td><td>In the control panel: shows or hides the advanced items (GPS and compass details, typed and manual bearings, Map Options, Submit).</td></tr>
+    </table>
+    <p class="muted-note">
+      Each participant is automatically given a distinct, high-contrast color so readings are easy to tell apart, for example:
+      <span class="legend-dot" style="background:#00c853"></span>
+      <span class="legend-dot" style="background:#2979ff"></span>
+      <span class="legend-dot" style="background:#aa00ff"></span>
+      <span class="legend-dot" style="background:#00bfa5"></span>
+      <span class="legend-dot" style="background:#d500f9"></span>
+      <span class="legend-dot" style="background:#64dd17"></span>
+    </p>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="section-heading" id="results">Reading the Results</div>
+  <div class="card">
+    <ul class="tip-list">
+      <li><span><img src="favicon.svg" alt="" style="width:1.1em;height:1.1em;vertical-align:-0.2em"/></span><span>Where bearing lines from different locations <strong>cross</strong> is the likely position of the fox transmitter.</span></li>
+      <li><span>📐</span><span>The more spread out your readings are, the sharper the intersection. Two lines from nearly the same spot barely narrow it down; lines taken from very different angles pin it tightly.</span></li>
+      <li><span>📍</span><span>Bearings taken from nearly the same spot — within about 30 m (100 ft) of each other — don't form a probable area together: the phone's GPS wobble is too large a share of the distance between them. Take your next bearing from somewhere else and the area appears. Close to the fox, when all your bearings are within a few steps of each other, follow the bearing lines themselves.</span></li>
+      <li><span>🔁</span><span>Take a fresh reading as you close in. Bearings get more reliable the nearer you are, and updated lines tighten the fix.</span></li>
+      <li><span>⚠</span><span>Reflections off hills, buildings, and metal can bend a signal. If one line looks like an outlier, take another reading from a new spot rather than trusting it.</span></li>
+      <li><span>🎯</span><span>The likely zone is marked for you by default in dark red (toggle it under <span class="badge">Show probable area</span> in Map Options, one of the advanced items). The fox is inside the red outline about 95% of the time, and the darker center (⊕) is its single most likely spot — tap the ⊕ for a quick summary. The area's size and shape come from how closely your bearings agree and from the expected accuracy of each one — a compass reading, a GPS heading, a typed bearing and a map-tapped bearing are each weighted differently.</span></li>
+      <li><span>🗺</span><span>After you submit a bearing, the map automatically frames the probable area so you can see where to head next. Once you move on toward it, the map goes back to following you.</span></li>
+      <li><span>⚖</span><span>The estimate weights each bearing by how it was captured — a GPS or typed-in bearing counts more tightly than a phone-compass one — and automatically sets aside a stray, reflected bearing. A small, tight ellipse means a confident fix; a large or dashed one means the bearings are nearly parallel or disagree, so gather more readings from different angles.</span></li>
+    </ul>
+  </div>
+
+  <!-- HUNT MANAGEMENT -->
+  <div class="section-heading" id="manage">Hunt Management</div>
+  <div class="card">
+    <ul class="tip-list">
+      <li><span>⏱</span><span>Hunts close automatically <span class="cfg-duration">4</span> hours after they're created. The countdown is in the top bar.</span></li>
+      <li><span>➕</span><span>The creator can extend the timer by <span class="cfg-addtime">30</span> minutes with the <span class="badge">+<span class="cfg-addtime">30</span>m</span> button.</span></li>
+      <li><span>🔒</span><span>The creator can end a hunt early with <span class="badge">Close Hunt</span>.</span></li>
+      <li><span>📋</span><span>The <strong>All Submissions</strong> list shows every reading, newest first. Tap any entry to jump to that marker.</span></li>
+      <li><span>💬</span><span>The creator can post group info — fox frequency, leader frequency, a contact number — that everyone in the hunt can see.</span></li>
+      <li><span>🗑</span><span>When a hunt closes, its markers and bearings are deleted. User accounts are kept.</span></li>
+    </ul>
+  </div>
+
+  <!-- DEVICE TIPS -->
+  <div class="section-heading" id="devices">Device Tips</div>
+  <div class="card">
+    <table>
+      <tr><th>Device</th><th>Notes</th></tr>
+      <tr><td>iPhone</td><td>Tap the "Enable Compass" button to trigger the iOS Motion &amp; Orientation prompt, then Allow. Safari works best. Portrait or landscape both work — the compass adjusts.</td></tr>
+      <tr><td>Android</td><td>The compass usually starts on its own. Chrome is recommended.</td></tr>
+      <tr><td>Desktop / Laptop</td><td>Location is less precise (Wi-Fi/IP based) and there's no compass — enter the bearing by hand or use tap-to-place. Great for following a group hunt's shared map.</td></tr>
+      <tr><td>All devices</td><td>Served over HTTPS. Keep the screen awake while using Watch GPS. After an app update, a hard refresh loads the newest version.</td></tr>
+    </table>
+  </div>
+
+  <!-- Extra host-configurable content from the "instructions" blocks in 0-config-foxhunt.js -->
+  <div id="instructions-content"></div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="foxhunt.css"/>
+  <script src="0-config-foxhunt.js"></script>
+  <script src="foxhunt-theme.js"></script>
+  <style>
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+      margin-top: 1.5rem;
+    }
+    @media(max-width:520px){ .dash-grid{ grid-template-columns:1fr; } }
+    .active-banner {
+      background: rgba(var(--accent-rgb),0.07);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 1rem 1.2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.8rem;
+      margin-top: 1.5rem;
+    }
+    .active-banner .hunt-name { font-family:var(--mono); font-size:1rem; color:var(--accent); }
+    .active-banner .hunt-meta { font-size:0.72rem; color:var(--muted); margin-top:0.2rem; font-family:var(--mono); }
+  </style>
+  <script src="0-config-license.js"></script>
+  <script src="foxhunt-license.js"></script>
+</head>
+<body class="grid-bg">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="0-config-firebase.js"></script>
+<script src="foxhunt.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => { insertNav(true); insertFooter();
+    renderContentBlocks('hunt-content', (typeof FOXHUNT_CONFIG !== 'undefined' ? FOXHUNT_CONFIG.hunt : []));
+  });
+
+  const HUNT_DURATION_HOURS = (typeof FOXHUNT_CONFIG !== 'undefined' && FOXHUNT_CONFIG.huntDurationHours != null) ? FOXHUNT_CONFIG.huntDurationHours : 4;
+  let currentUser = null, currentUsername = null;
+
+  requireAuth((user, username) => {
+    currentUser = user;
+    currentUsername = username;
+    // v72.13: ask again on every dashboard load; the answer feeds the line below.
+    if (typeof fhRequestPersist === 'function') fhRequestPersist().finally(updateOfflineReady);
+    else updateOfflineReady();
+    sweepExpiredHunts().finally(checkActiveHunt);
+  });
+
+  // Proactively close hunts whose time is up so their names free up immediately,
+  // without waiting for someone to try to reuse the name. Firestore rules allow
+  // any signed-in user to close a hunt. Non-fatal: create/join still self-heal.
+  async function sweepExpiredHunts() {
+    try {
+      // v2026.9 (C10): bounded. Unbounded, a wedged local database hung this read
+      // forever, and checkActiveHunt - chained after it - never ran: no banner, no
+      // log, no clue. Seen on the day-9 check of 2026-10-02.
+      const snap = await boundedGet(db.collection('hunts').where('closed', '==', false), 'sweep: expired hunts');
+      const now = Date.now();
+      const expired = snap.docs.filter(d => now > (d.data().closesAt || 0));
+      if (!expired.length) return;
+      const batch = db.batch();
+      expired.slice(0, 450).forEach(d => batch.update(d.ref, { closed: true }));
+      await batch.commit();
+    } catch (e) { /* ignore — name reuse still self-heals on create/join */ }
+  }
+
+  // Reminder for anyone hunting from Safari on an iPhone instead of the icon
+  // (v72.7): permissions re-asked, storage subject to Safari's purge. Shown
+  // until dismissed; never from the icon; never on Android or desktop.
+  // Runs on DOMContentLoaded: this script sits above the strip's markup, and in
+  // v72.7 it ran immediately, found no element, and never showed (UI-06 fail).
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (!isIOS || navigator.standalone === true) return;
+      if (localStorage.getItem('fh_ios_strip_dismissed') === '1') return;
+      const el = document.getElementById('ios-browser-strip');
+      if (!el) return;
+      el.style.display = 'block';
+      document.getElementById('ios-browser-strip-x').addEventListener('click', () => {
+        try { localStorage.setItem('fh_ios_strip_dismissed', '1'); } catch (e) {}
+        el.style.display = 'none';
+      });
+    } catch (e) {}
+  });
+
+  function setMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text; el.className = 'msg ' + type;
+  }
+
+  // "Checking the hunt name… 3 s" while a read is in flight. Returns a function
+  // that stops the counter and clears the line (only if it is still ours).
+  function showWorking(id, label) {
+    const el = document.getElementById(id);
+    if (!el) return () => {};
+    const t0 = Date.now();
+    const tick = () => { el.textContent = label + '\u2026 ' + Math.floor((Date.now() - t0) / 1000) + ' s'; el.className = 'msg'; };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => { clearInterval(iv); if (el.textContent.startsWith(label)) el.textContent = ''; };
+  }
+
+  // A Firestore get() with source 'default' waits for the server with no
+  // timeout. On an iOS home-screen app the client can sit "online" over a dead
+  // connection and that wait never ends - Create Hunt was seen dimmed for 15+
+  // minutes until the app was killed (v72.6). Every awaited read on this page
+  // now goes through here: ask the server, but give up after LIMIT ms and
+  // answer from the local cache instead. Offline, go straight to the cache.
+  // v72.7: the cache read is bounded too. With multi-tab persistence a second
+  // instance routes even cache reads through the primary instance, and if the
+  // primary is frozen by iOS the cache read hangs as well - seen as "Checking
+  // the hunt name... 124 s" (DOC-14 run). If both time out, boundedGet throws
+  // 'stalled' and the caller stops and says so: the local database itself is
+  // unreachable, so proceeding would only move the stall to the hunt page.
+  // The only real remedy is closing every instance, which the message says.
+  const GET_LIMIT_MS = 8000;
+  // v2026.9 (C10): the local read gets 5 s and one 3 s retry. 2 s was tight for
+  // a database waking after days idle, and a single miss used to be the verdict.
+  const CACHE_LIMIT_MS = 5000;
+  const CACHE_RETRY_MS = 3000;
+  function withLimit(p, ms) {
+    let timer;
+    const timeout = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), ms); });
+    return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+  }
+  // Every bounded read records what it tried and how long it took (v2026.9), so
+  // the Details readout under a stall message can say which path failed.
+  const fhReadLog = [];
+  function logRead(label, branch, ms, result) {
+    fhReadLog.push({ t: new Date().toISOString().slice(11, 19), label, branch, ms, result });
+    if (fhReadLog.length > 40) fhReadLog.shift();
+  }
+  async function boundedGet(q, label) {
+    label = label || 'read';
+    if (navigator.onLine) {
+      const t0 = Date.now();
+      try { const snap = await withLimit(q.get({ source: 'default' }), GET_LIMIT_MS); logRead(label, 'server', Date.now() - t0, 'ok'); return snap; }
+      catch (e) { logRead(label, 'server', Date.now() - t0, (e && e.message) || 'error'); }
+    }
+    const limits = [CACHE_LIMIT_MS, CACHE_RETRY_MS];
+    for (let i = 0; i < limits.length; i++) {
+      const t1 = Date.now();
+      try { const snap = await withLimit(q.get({ source: 'cache' }), limits[i]); logRead(label, 'cache ' + (i + 1), Date.now() - t1, 'ok'); return snap; }
+      catch (e) { logRead(label, 'cache ' + (i + 1), Date.now() - t1, (e && e.message) || 'error'); }
+    }
+    throw new Error('stalled');
+  }
+  // v2026.9: the message no longer blames another window - on a home-screen icon
+  // there is none to close (each icon has its own storage; C10, 2026-10-02).
+  const STALLED_MSG = 'Not responding \u2014 this phone\u2019s local copy of the hunt database did not answer. '
+                    + 'Close every Fox Pursuit window in the app switcher and reopen the app. '
+                    + 'If that does not fix it, tap Repair local data.';
+  // Shown in place of a plain error: the message, a Details readout and the
+  // Repair button, so a stuck phone has a way out without anyone's help.
+  function showStalled(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'msg error';
+    el.innerHTML = fhEscape(STALLED_MSG)
+      + '<div style="margin-top:0.6rem;display:flex;gap:0.5rem;flex-wrap:wrap">'
+      + '<button type="button" class="btn outline" onclick="showDiagnostics(\'' + id + '\')">Details</button>'
+      + '<button type="button" class="btn primary" onclick="repairLocalData()">Repair local data</button>'
+      + '</div>';
+  }
+
+  function newestLive(snap) {
+    return snap.docs
+      .map(d => ({ id: d.id, data: d.data() }))
+      .filter(h => !h.data.closed && Date.now() <= (h.data.closesAt || 0))
+      .sort((a, b) => (b.data.createdAt || 0) - (a.data.createdAt || 0))[0];
+  }
+
+  async function checkActiveHunt() {
+    // 1) Resume a hunt the current HANDLE created (works on any device and after
+    //    sign-out, because it matches on the handle, not the uid).
+    //    Cache first, so the hunt the user just left appears at once instead of
+    //    after a server round trip that could take 30 s or never return; the
+    //    bounded server read then confirms or corrects it (v72.6).
+    const mineQ = db.collection('hunts').where('createdBy', '==', currentUsername);
+    let shownFromCache = false;
+    // v2026.9: bounded too - unbounded, a wedged local database kept the banner
+    // from ever appearing and this function from ever finishing (C10).
+    { const t0 = Date.now();
+      try {
+        const cached = newestLive(await withLimit(mineQ.get({ source: 'cache' }), CACHE_LIMIT_MS));
+        logRead('banner: my hunts', 'cache', Date.now() - t0, 'ok');
+        if (cached) { showBanner(cached.data, cached.id); shownFromCache = true; }
+      } catch (e) { logRead('banner: my hunts', 'cache', Date.now() - t0, (e && e.message) || 'error'); }
+    }
+    try {
+      const live = newestLive(await boundedGet(mineQ, 'banner: my hunts (confirm)'));
+      if (live) { showBanner(live.data, live.id); return; }
+      if (shownFromCache) { hideBanner(); }
+    } catch (e) { if (shownFromCache) return; }
+
+    // 2) Otherwise resume a hunt stored on THIS device — but only if the current
+    //    user actually created or joined it. Never reveal a hunt someone else made.
+    const huntId = sessionStorage.getItem('huntId');
+    if (!huntId) return;
+    let snap = null;
+    try { snap = await boundedGet(db.collection('hunts').doc(huntId), 'banner: stored hunt'); } catch (e) {}
+    // Offline, an uncached hunt is unknown rather than gone — keep the pointer so
+    // the banner returns on reconnect instead of silently losing the hunt.
+    if (!snap || !snap.exists) {
+      if (navigator.onLine) sessionStorage.removeItem('huntId');
+      return;
+    }
+    const d = snap.data();
+    const isMember = d.createdBy === currentUsername ||
+                     (d.participants && d.participants[currentUsername] !== undefined);
+    if (d.closed || Date.now() > (d.closesAt || 0) || !isMember) {
+      sessionStorage.removeItem('huntId'); return;
+    }
+    showBanner(d, huntId);
+  }
+
+  function hideBanner() {
+    const banner = document.getElementById('active-hunt');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function showBanner(data, huntId) {
+    sessionStorage.setItem('huntId', huntId);
+    const openBtn = document.getElementById('open-hunt-btn');
+    if (openBtn) openBtn.onclick = () => { window.location.href = 'hunt.html?id=' + encodeURIComponent(huntId); };
+    const banner = document.getElementById('active-hunt');
+    banner.style.display = 'flex';
+    document.getElementById('banner-name').textContent = '🦊 ' + data.name;
+    const exp = new Date(data.closesAt);
+    document.getElementById('banner-meta').textContent =
+      'Created by ' + data.createdBy + ' · Closes ' + exp.toLocaleTimeString();
+  }
+
+  // Guards against a second press while the first is still in flight. Without it
+  // a double-tap can create TWO hunts: the duplicate-name check below queries
+  // Firestore before the first write has necessarily landed, so the second run
+  // can miss it - and the analytics hunt counter is incremented twice.
+  let creatingHunt = false;
+
+  async function createHunt() {
+    if (creatingHunt) return;
+    const name = document.getElementById('hunt-name').value.trim().toUpperCase();
+    if (!name) { setMsg('create-msg','Enter a hunt name','error'); return; }
+    if (!/^[A-Z0-9 _\-]+$/.test(name)) {
+      setMsg('create-msg','Letters, numbers, spaces, _ and - only','error'); return; }
+    creatingHunt = true;
+    const btn = document.querySelector('button[onclick="createHunt()"]');
+    if (btn) btn.disabled = true;
+    // Say what the dimmed button is doing, and for how long. A silent dimmed
+    // button reads as broken; a counter reads as waiting (v72.6).
+    const stopStatus = showWorking('create-msg', 'Checking the hunt name');
+    const releaseCreate = () => {
+      creatingHunt = false;
+      if (btn) btn.disabled = false;
+      stopStatus();
+    };
+    let existing = { docs: [] };
+    let stalled = false;
+    if (navigator.onLine) {
+      try {
+        existing = await boundedGet(db.collection('hunts')
+          .where('name','==',name).where('closed','==',false), 'create: name check');
+      } catch (e) { stalled = (e && e.message === 'stalled'); /* cache miss or stall — allow creation; server rules still arbitrate */ }
+    } else {
+      // v2026.9 (C10): offline there is no answer to "is this name in use?" - the
+      // server has the list and this phone may not. Create locally, as the write
+      // below already does; the rules arbitrate the name when it syncs, exactly as
+      // they do for every other offline write. The day-9 check of 2026-10-02 saw a
+      // phone that could not even ask the question offline.
+      logRead('create: name check', 'skipped (offline)', 0, 'ok');
+    }
+    stopStatus();
+    // Stalled means the local database itself is unreachable, so the hunt
+    // page would stall too. Say what to do instead of navigating into it.
+    if (stalled) { releaseCreate(); showStalled('create-msg'); return; }
+    const liveDup = existing.docs.find(d => Date.now() <= (d.data().closesAt || 0));
+    if (liveDup) {
+      setMsg('create-msg','A hunt with that name is already active','error'); releaseCreate(); return; }
+    // Demo mode (v72.11): cap the number of open hunts on a public site.
+    if (typeof fhDemo === 'function' && fhDemo()) {
+      const cap = (FOXHUNT_CONFIG.demoMaxOpenHunts != null) ? FOXHUNT_CONFIG.demoMaxOpenHunts : 10;
+      let openCount = 0;
+      try {
+        const open = await boundedGet(db.collection('hunts').where('closed','==',false), 'create: demo cap');
+        openCount = open.docs.filter(x => Date.now() <= (x.data().closesAt || 0)).length;
+      } catch (e) { /* unknown - allow; the sweep and the cap self-correct next time */ }
+      if (openCount >= cap) {
+        setMsg('create-msg','This demo site already has ' + cap + ' hunts open. Only ' + cap + ' are allowed. Join one, or try again after one closes (they close by themselves).','error');
+        releaseCreate(); return;
+      }
+    }
+    // Free the name: close any same-name hunts that have already expired.
+    for (const d of existing.docs) { d.ref.update({ closed: true }).catch(() => {}); }
+    const now = Date.now();
+    const huntDoc = {
+      name, createdBy: currentUsername,
+      createdByUid: currentUser.uid,
+      createdAt: now, closed: false,
+      closesAt: now + HUNT_DURATION_HOURS * 3600 * 1000,
+      groupInfo: ''
+    };
+    // Track participants per hunt (the handle is the identity).
+    huntDoc.participants = { [currentUsername]: currentUser.uid };
+    // doc() mints the id locally, so this works with no network. The write is not
+    // awaited: offline it queues and syncs on reconnect instead of hanging.
+    const ref = db.collection('hunts').doc();
+    ref.set(huntDoc).catch(() => {});
+    // Analytics: count this hunt (privacy-safe running total). Best-effort.
+    // Not on a demo site (v72.11): its hunts are not usage.
+    if (!(typeof fhDemo === 'function' && fhDemo())) db.collection('analytics').doc('totals')
+      .set({ hunts: firebase.firestore.FieldValue.increment(1) }, { merge: true })
+      .catch(() => {});
+    setMsg('create-msg','Hunt created!','success');
+    setTimeout(() => {
+      // Remember the hunt for the dashboard's rejoin banner, but don't display the
+      // banner here — we navigate straight to the hunt, so showing it only flashes.
+      // Carry the hunt forward so hunt.html can open it offline even before the
+      // local write has surfaced from persistence (belt-and-suspenders).
+      try { sessionStorage.setItem('fh_hunt_' + ref.id, JSON.stringify(huntDoc)); } catch (e) {}
+      sessionStorage.setItem('huntId', ref.id);
+      window.location.href = 'hunt.html?id=' + encodeURIComponent(ref.id);
+    }, 600);
+  }
+
+  async function joinHunt() {
+    const name = document.getElementById('join-name').value.trim().toUpperCase();
+    if (!name) { setMsg('join-msg','Enter the hunt name','error'); return; }
+    const stopStatus = showWorking('join-msg', 'Looking up the hunt');
+    let snap = { docs: [] };
+    try {
+      snap = await boundedGet(db.collection('hunts')
+        .where('name','==',name).where('closed','==',false), 'join: lookup');
+    } catch (e) {
+      stopStatus();
+      if (e && e.message === 'stalled') { showStalled('join-msg'); return; }
+      /* offline cache miss — handled as "not found" below */
+    }
+    stopStatus();
+    const liveDoc = snap.docs.find(d => Date.now() <= (d.data().closesAt || 0));
+    if (!liveDoc) {
+      // Close any expired matches so the name frees up, then report none active.
+      for (const d of snap.docs) { d.ref.update({ closed: true }).catch(() => {}); }
+      setMsg('join-msg', navigator.onLine
+        ? 'No active hunt found with that name'
+        : 'You are offline — only hunts already open on this device can be rejoined.',
+        'error'); return;
+    }
+    const doc = liveDoc;
+    // The handle IS the identity. Whoever signs in with this handle owns its
+    // participant slot, so a creator or returning participant who comes back with a
+    // fresh anonymous uid simply reclaims it — no "in use" block. This intentionally
+    // lets the same person take part from multiple devices.
+    // Not awaited: queues offline, syncs on reconnect (see createHunt above).
+    doc.ref.update({
+      ['participants.' + currentUsername]: currentUser.uid
+    }).catch(() => {});
+    try { sessionStorage.setItem('fh_hunt_' + doc.id, JSON.stringify(doc.data())); } catch (e) {}
+    sessionStorage.setItem('huntId', doc.id);   // remember for the rejoin banner; don't flash it before navigating
+    window.location.href = 'hunt.html?id=' + encodeURIComponent(doc.id);
+  }
+
+  // ── Offline-ready indicator ──────────────────────────────────
+  // Tells the user, before they drive out, whether this device can run a hunt
+  // with no signal: a signed-in session plus at least one stored map region.
+  // Counts stored offline map regions by reading the 'foxpursuit-maps' IndexedDB
+  // directly (the dashboard doesn't load the map module).
+  function countRegions() {
+    return new Promise(resolve => {
+      let done = false;
+      const finish = n => { if (!done) { done = true; resolve(n); } };
+      try {
+        const req = indexedDB.open('foxpursuit-maps');
+        req.onerror = () => finish(0);
+        req.onsuccess = () => {
+          const idb = req.result;
+          try {
+            if (!idb.objectStoreNames.contains('regions')) { idb.close(); return finish(0); }
+            // FP12: count only areas of this app's map (the store is shared per site).
+            const mapUrl = (typeof FOXHUNT_CONFIG !== 'undefined' && FOXHUNT_CONFIG.tileUrl ? String(FOXHUNT_CONFIG.tileUrl).trim() : '');
+            const cr = idb.transaction('regions', 'readonly').objectStore('regions').getAll();
+            cr.onsuccess = () => { finish((cr.result || []).filter(r => r && r.mapUrl === mapUrl).length); try { idb.close(); } catch (e) {} };
+            cr.onerror   = () => { finish(0);            try { idb.close(); } catch (e) {} };
+          } catch (e) { finish(0); try { idb.close(); } catch (_) {} }
+        };
+      } catch (e) { finish(0); }
+    });
+  }
+
+  // Tells the user, before they head out of coverage, whether this device can run a
+  // hunt with no signal: a persisted sign-in plus at least one stored region. Called
+  // from the auth callback (auth.currentUser is restored asynchronously, so reading
+  // it at page load reports a false 'signed out') and on connectivity change.
+  function updateOfflineReady() {
+    const el = document.getElementById('offline-ready');
+    if (!el) return;
+    const signedIn = !!(currentUser || (typeof auth !== 'undefined' && auth.currentUser));
+    el.style.display = 'block';
+    if (!signedIn) {
+      el.textContent = 'Not offline ready \u2014 sign in once while online.';
+      el.style.color = 'var(--muted)';
+      return;
+    }
+    // v72.13: storage protection matters as much as the region count. An iPhone
+    // icon whose storage is not protected can lose everything after 7 unused days.
+    // FP12 (C24): the same iPhone/iPad test the Safari reminder above uses.
+    const fhIsIOSDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent || '') ||
+                                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const prot = (typeof fhStorageProtected === 'function') ? fhStorageProtected() : Promise.resolve(null);
+    Promise.all([countRegions(), prot]).then(([regions, protectedStore]) => {
+      const tail = protectedStore === true  ? ' Storage protected.'
+                 : protectedStore === false ? (fhIsIOSDevice()
+                     ? ' Storage NOT protected \u2014 iOS may clear maps and sign-in after 7 days unused; open the app weekly and download your area the day before a hunt.'
+                     // FP12 (C24): not an iPhone/iPad - Android and others clear only when short of space.
+                     : ' Storage not protected \u2014 the browser may clear maps and sign-in if the device runs low on space. Adding the app to the home screen often protects it. Check your downloaded map area the day before a hunt.')
+                 : '';
+      if (regions > 0) {
+        el.textContent = '\u2713 Offline ready \u2014 signed in, ' + regions + ' map region'
+                       + (regions === 1 ? '' : 's') + ' stored on this device.' + tail;
+        el.style.color = protectedStore === false ? 'var(--accent)' : 'var(--ok, #6bbf74)';
+      } else {
+        el.textContent = 'Not offline ready \u2014 open a hunt map and download a map '
+                       + 'region before you head out of coverage.' + tail;
+        el.style.color = 'var(--muted)';
+      }
+    });
+  }
+
+  // ── Diagnostics and repair (v2026.9, C10) ─────────────────────
+  // What Web Inspector would show, on the phone itself: whether it thinks it is
+  // online, whether its storage is protected, whether the sign-in came back,
+  // whether IndexedDB and Firestore answer and how fast, and the log of every
+  // bounded read this page made. ?dbg=1 shows it on load; the Details button
+  // under a stall message shows it on demand. Nothing here changes any data.
+  function fhFirestoreDbName() {
+    try { return 'firestore/[DEFAULT]/' + firebaseConfig.projectId + '/main'; } catch (e) { return ''; }
+  }
+  function timed(p, ms) {
+    const t0 = Date.now();
+    return withLimit(p, ms).then(v => ({ ok: true, ms: Date.now() - t0, v }),
+                                 e => ({ ok: false, ms: Date.now() - t0, e: (e && e.message) || String(e) }));
+  }
+  async function fhDiagnostics() {
+    const L = [];
+    const push = (k, v) => L.push(k + ': ' + v);
+    push('Build', (typeof FH_BUILD !== 'undefined' ? FH_BUILD : '?') + ' \u00b7 ' + new Date().toISOString());
+    push('Page', location.pathname + (navigator.standalone === true ? ' (home-screen icon)' : ' (browser)'));
+    push('Online (navigator.onLine)', navigator.onLine ? 'yes' : 'no');
+    push('Service worker', (navigator.serviceWorker && navigator.serviceWorker.controller) ? 'controlling' : 'none');
+    let prot = 'unknown';
+    try { if (navigator.storage && navigator.storage.persisted) prot = (await navigator.storage.persisted()) ? 'protected' : 'NOT protected'; } catch (e) {}
+    push('Storage', prot);
+    let handle = ''; try { handle = localStorage.getItem('fh_handle') || ''; } catch (e) {}
+    push('Sign-in', ((typeof auth !== 'undefined' && auth.currentUser)
+      ? 'restored (' + (auth.currentUser.isAnonymous ? 'anonymous' : 'account') + ')' : 'none')
+      + (handle ? ', handle ' + handle : ', no handle'));
+    push('Config', (typeof window.__FOXHUNT_CONFIG_ERROR === 'string') ? 'ERROR: ' + window.__FOXHUNT_CONFIG_ERROR : 'ok');
+    // IndexedDB: the list of databases, then a plain timed open of Firestore's.
+    let names = null;
+    try { if (indexedDB.databases) { const r = await timed(indexedDB.databases(), 3000); if (r.ok) names = r.v; } } catch (e) {}
+    push('IndexedDB databases', names ? (names.map(x => x.name).join(', ') || '(none)') : 'list unavailable');
+    const dbName = fhFirestoreDbName();
+    if (dbName) {
+      const r = await timed(new Promise((res, rej) => {
+        try {
+          const rq = indexedDB.open(dbName);
+          rq.onsuccess = () => { try { rq.result.close(); } catch (e) {} res('opened'); };
+          rq.onerror   = () => rej(rq.error || new Error('error'));
+          rq.onblocked = () => rej(new Error('blocked'));
+        } catch (e) { rej(e); }
+      }), 3000);
+      push('IndexedDB open (' + dbName + ')', r.ok ? r.ms + ' ms' : 'FAILED after ' + r.ms + ' ms: ' + r.e);
+    }
+    if (typeof db !== 'undefined') {
+      const c = await timed(db.collection('hunts').limit(1).get({ source: 'cache' }), 3000);
+      push('Firestore cache read', c.ok ? c.ms + ' ms (' + c.v.size + ' doc)' : 'NO ANSWER after ' + c.ms + ' ms: ' + c.e);
+      if (navigator.onLine) {
+        const sv = await timed(db.collection('hunts').limit(1).get({ source: 'server' }), 5000);
+        push('Firestore server read', sv.ok ? sv.ms + ' ms' : 'NO ANSWER after ' + sv.ms + ' ms: ' + sv.e);
+      }
+      const w = await timed(db.waitForPendingWrites(), 3000);
+      push('Pending writes', w.ok ? 'none (' + w.ms + ' ms)' : 'still pending after ' + w.ms + ' ms');
+    } else push('Firestore', 'not loaded');
+    push('Read log', fhReadLog.length ? '' : '(empty)');
+    fhReadLog.forEach(r => L.push('  ' + r.t + ' ' + r.label + ' \u2192 ' + r.branch + ' ' + r.ms + ' ms ' + r.result));
+    return L.join('\n');
+  }
+  async function showDiagnostics(afterId) {
+    let box = document.getElementById('dbg-out');
+    if (!box) {
+      box = document.createElement('pre');
+      box.id = 'dbg-out';
+      box.style.cssText = 'white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:0.72rem;'
+                        + 'line-height:1.5;background:var(--panel);border:1px solid var(--border);border-radius:4px;'
+                        + 'padding:0.7rem;margin:0.6rem 0;color:var(--text)';
+      const anchor = afterId ? document.getElementById(afterId) : null;
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+      else { const wrap = document.querySelector('.page-wrap'); (wrap || document.body).appendChild(box); }
+    }
+    box.textContent = 'Collecting\u2026 (up to 15 s)';
+    const text = await fhDiagnostics();
+    box.textContent = text;
+    // A Copy button, so the readout can be pasted into a message.
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn outline'; b.textContent = 'Copy';
+    b.style.cssText = 'margin-top:0.5rem;font-size:0.72rem;padding:0.3rem 0.7rem';
+    b.onclick = () => { try { navigator.clipboard.writeText(text).then(() => { b.textContent = 'Copied \u2713'; }); } catch (e) {} };
+    box.appendChild(document.createTextNode('\n')); box.appendChild(b);
+  }
+  // Repair: hand over to repair.html, which loads no Firebase code and so can
+  // delete the Firestore database this page cannot (this page holds it open).
+  // Sign-in, handle and downloaded map regions are untouched; only the local
+  // copy of the hunt database goes, and an offline-created hunt that never
+  // reached the server goes with it - the confirm says so.
+  function repairLocalData() {
+    if (!confirm('Repair local data?\n\nThis clears this phone\u2019s local copy of the hunt database and reloads. '
+               + 'Your sign-in, handle and downloaded map areas are kept. A hunt created offline that has '
+               + 'not reached the server yet will be lost.')) return;
+    let p = ''; try { p = firebaseConfig.projectId || ''; } catch (e) {}
+    window.location.href = 'repair.html?p=' + encodeURIComponent(p);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('online',  updateOfflineReady);
+    window.addEventListener('offline', updateOfflineReady);
+    if (/[?&]dbg=1(&|$)/.test(location.search)) setTimeout(() => showDiagnostics(''), 1500);   // v2026.9
+    setTimeout(() => {
+      document.getElementById('hunt-name').addEventListener('keydown', e => { if(e.key==='Enter') createHunt(); });
+      document.getElementById('join-name').addEventListener('keydown', e => { if(e.key==='Enter') joinHunt(); });
+    }, 100);
+  });
+</script>
+
+<div class="page-wrap">
+  <div id="ios-browser-strip" style="display:none;border:1px solid var(--accent);border-radius:4px;padding:0.55rem 0.8rem;margin:0 0 0.9rem;font-family:var(--mono);font-size:0.76rem;line-height:1.5;">
+    <button type="button" id="ios-browser-strip-x" aria-label="Dismiss" style="float:right;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:0 0 0 0.6rem;line-height:1">&#x2715;</button>
+    You're in Safari. For hunting, add Fox Pursuit to your home screen and open it from there &mdash;
+    <a href="getting-started.html#iphone" style="color:var(--accent);font-weight:bold">the iPhone steps</a>.
+  </div>
+  <h1 class="page-title"><img src="favicon.svg" alt="" style="width:1.15em;height:1.15em;vertical-align:-0.2em;margin-right:0.3em"/>Fox Pursuit Dashboard</h1>
+  <p class="page-subtitle">Create a new hunt or join an existing one</p>
+
+  <div id="offline-ready" style="display:none;font-size:0.82rem;padding:0.55rem 0.8rem;
+       border-radius:6px;margin-bottom:0.9rem;border:1px solid var(--border)"></div>
+
+  <div id="active-hunt" class="active-banner" style="display:none">
+    <div>
+      <div class="hunt-name" id="banner-name"></div>
+      <div class="hunt-meta" id="banner-meta"></div>
+    </div>
+    <button class="btn primary" id="open-hunt-btn">
+      Open Current Hunt Map →
+    </button>
+  </div>
+
+  <div class="dash-grid">
+    <div class="card">
+      <div class="section-heading" style="margin-top:0"><img src="favicon.svg" alt="" style="width:1.1em;height:1.1em;vertical-align:-0.2em;margin-right:0.3em"/>Create a Hunt</div>
+      <p style="font-size:0.83rem;color:var(--muted)">Start a new session. Share the name with participants.</p>
+      <label class="field-label" for="hunt-name">Hunt Name</label>
+      <input id="hunt-name" type="text" placeholder="E.G. FOXHUNT-JUNE-A" maxlength="40"
+             oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"
+             aria-describedby="hunt-name-hint"/>
+      <!-- Neither rule was stated anywhere before v71.11. maxlength simply stops
+           accepting keystrokes at 40, which reads as a broken keyboard, and the
+           character-set rule only surfaced as an error AFTER pressing Create. -->
+      <div id="hunt-name-hint" style="font-size:0.72rem;color:var(--muted);margin-top:0.35rem;line-height:1.5">
+        Up to 40 characters &mdash; letters, numbers, spaces, _ and - only.
+        Keep it short: every participant types it exactly.
+      </div>
+      <button class="btn primary full" onclick="createHunt()" style="margin-top:1rem">Create Hunt</button>
+      <div class="msg" id="create-msg"></div>
+    </div>
+    <div class="card">
+      <div class="section-heading" style="margin-top:0">📡 Join a Hunt</div>
+      <p style="font-size:0.83rem;color:var(--muted)">Enter the exact name given to you by the hunt creator.</p>
+      <label class="field-label" for="join-name">Hunt Name</label>
+      <input id="join-name" type="text" placeholder="EXACT HUNT NAME" maxlength="40"
+             oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"/>
+      <button class="btn outline full" onclick="joinHunt()" style="margin-top:1rem">Join Hunt</button>
+      <div class="msg" id="join-msg"></div>
+    </div>
+  </div>
+
+  <!-- Extra host-configurable content from the "hunt" blocks in 0-config-foxhunt.js -->
+  <div id="hunt-content"></div>
+</div>
+
+</body>
+</html>

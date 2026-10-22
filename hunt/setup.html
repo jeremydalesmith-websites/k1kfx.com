@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — License Setup</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#0d0f14;--panel:#141720;--border:#2a2f3d;
+      --accent:#f0a500;--text:#d8dce8;--muted:#9aa2b4;
+      --error:#e05a5a;--success:#50c878;
+      --mono:'Courier New',monospace;
+    }
+    body{background:var(--bg);color:var(--text);font-family:var(--mono);
+         display:flex;flex-direction:column;align-items:center;
+         justify-content:center;min-height:100vh;padding:1rem;}
+    body::before{content:'';position:fixed;inset:0;
+      background-image:linear-gradient(var(--border) 1px,transparent 1px),
+        linear-gradient(90deg,var(--border) 1px,transparent 1px);
+      background-size:40px 40px;opacity:0.15;pointer-events:none;}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:4px;
+          width:100%;max-width:560px;padding:2.5rem 2rem;
+          position:relative;z-index:1;box-shadow:0 0 60px rgba(0,0,0,0.6);}
+    .logo{text-align:center;margin-bottom:1.8rem;}
+    .logo .fox{font-size:2.5rem;display:block;margin-bottom:0.5rem;}
+    h1{color:var(--accent);font-size:1.1rem;letter-spacing:0.12em;margin-bottom:0.3rem;}
+    .subtitle{font-size:0.72rem;color:var(--muted);letter-spacing:0.08em;
+              text-transform:uppercase;}
+    p{font-size:0.83rem;color:var(--muted);line-height:1.7;margin:1.2rem 0;}
+    label{display:block;font-size:0.65rem;color:var(--muted);
+          letter-spacing:0.1em;text-transform:uppercase;
+          margin-bottom:0.3rem;margin-top:1rem;}
+    input,textarea{width:100%;background:var(--bg);border:1px solid var(--border);
+          border-radius:3px;padding:0.6rem 0.8rem;font-family:var(--mono);
+          font-size:0.9rem;color:var(--text);outline:none;
+          transition:border-color 0.2s;resize:vertical;}
+    textarea{min-height:5.5rem;line-height:1.5;word-break:break-all;}
+    textarea:placeholder-shown{word-break:normal;}   /* FP12 (C17): hint wraps between words */
+    input:focus,textarea:focus{border-color:var(--accent);}
+    input[readonly]{color:var(--success);border-color:rgba(80,200,120,0.25);
+                    cursor:not-allowed;}
+    .note{font-size:0.68rem;color:var(--muted);margin-top:0.3rem;}
+    button{width:100%;margin-top:1.5rem;padding:0.72rem;
+           background:var(--accent);color:#000;border:none;border-radius:3px;
+           font-family:var(--mono);font-size:0.88rem;font-weight:bold;
+           letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;
+           transition:background 0.2s;}
+    button:hover{background:#ffb820;}
+    button:disabled{background:var(--muted);cursor:not-allowed;}
+    button.secondary{background:transparent;color:var(--accent);
+                     border:1px solid var(--border);margin-top:0.6rem;}
+    button.secondary:hover{background:rgba(240,165,0,0.08);}
+    .msg{margin-top:1rem;padding:0.8rem;border-radius:3px;
+         font-size:0.8rem;line-height:1.6;display:none;}
+    .msg.error{display:block;color:var(--error);
+               background:rgba(224,90,90,0.08);border:1px solid rgba(224,90,90,0.3);}
+    .msg.success{display:block;color:var(--success);
+                 background:rgba(80,200,120,0.08);border:1px solid rgba(80,200,120,0.3);}
+    .msg.caution{display:block;color:var(--accent);
+                 background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.3);}
+    .codebox{background:var(--bg);border:1px solid var(--border);border-radius:3px;
+             padding:0.8rem;font-size:0.74rem;line-height:1.6;color:var(--text);
+             word-break:break-all;white-space:pre-wrap;margin-top:0.5rem;}
+    .spinner{display:inline-block;width:14px;height:14px;
+             border:2px solid #000;border-top-color:transparent;
+             border-radius:50%;animation:spin 0.7s linear infinite;
+             vertical-align:middle;margin-right:0.4rem;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    footer{margin-top:1.5rem;font-size:0.65rem;color:var(--muted);
+           text-align:center;position:relative;z-index:1;}
+    footer a{color:var(--accent);}
+    a{color:var(--accent);}
+    ol{margin:0.8rem 0 0 1.1rem;font-size:0.8rem;color:var(--muted);line-height:1.9;}
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <span class="fox">🦊</span>
+    <h1>FOX PURSUIT</h1>
+    <div class="subtitle">Site Key Setup</div>
+  </div>
+
+  <div style="text-align:center;border:1px solid var(--border,#2a2f3d);border-radius:6px;padding:0.7rem 0.9rem;margin:0 0 1.1rem;font-size:0.78rem;color:var(--muted,#9aa2b4);line-height:1.5">
+    IMPORTANT: New here? Open <strong style="color:var(--accent,#f0a500)">SETUP.txt</strong> (included in your download) for full deployment &amp; admin instructions.
+  </div>
+
+  <div id="checking-msg" style="text-align:center;color:var(--muted);font-size:0.8rem">
+    Checking this site's license…
+  </div>
+
+  <!-- ── Already licensed ───────────────────────────────────── -->
+  <div id="licensed-area" style="display:none">
+    <div class="msg success" style="display:block">
+      ✓ <strong>This site is licensed.</strong><br><br>
+      Site key: <span id="lic-id"></span><br>
+      Issued: <span id="lic-date"></span><br>
+      Edition: <span id="lic-ed"></span><br>
+      License: Lifetime<br><br>
+      You may now <a href="index.html">open the Fox Pursuit site</a>.
+    </div>
+    <p style="font-size:0.75rem">
+      Your site key is in <strong>0-config-license.js</strong> and travels with
+      your site. Nothing needs to be entered on any other device, and nothing needs
+      re-entering if a device is replaced or reset.
+    </p>
+    <button class="secondary" onclick="showForm()">Enter a different key</button>
+  </div>
+
+  <!-- ── Key entry ──────────────────────────────────────────── -->
+  <div id="form-area" style="display:none">
+    <p>Paste the <strong>license key from your Gumroad receipt</strong>. Copy and
+       paste it rather than typing it.</p>
+    <p style="font-size:0.75rem">
+       This is a one-time step and it needs an internet connection: your purchase
+       is checked once, and your site is issued a permanent <strong>site key</strong>.
+       From then on it is verified inside the browser with no connection at all.</p>
+
+    <label>Gumroad License Key</label>
+    <textarea id="license-key" placeholder="Paste the key from your Gumroad receipt" autocomplete="off"
+              spellcheck="false"></textarea>
+
+    <div class="msg" id="msg"></div>
+
+    <button id="check-btn" onclick="checkKey()">Check License Key →</button>
+
+    <p style="margin-top:1.5rem;font-size:0.72rem">
+      Need help? Contact
+      <a href="https://www.qrz.com/db/WA0MCS" target="_blank">WA0MCS on QRZ</a>.
+    </p>
+  </div>
+
+  <!-- ── Verified: show the config line to paste ─────────────── -->
+  <div id="install-area" style="display:none">
+    <div class="msg success" style="display:block">
+      ✓ <strong>Site key verified.</strong><br><br>
+      Site key: <span id="ok-id"></span><br>
+      Issued: <span id="ok-date"></span><br>
+      Edition: <span id="ok-ed"></span><br>
+      License: Lifetime
+    </div>
+
+    <p style="margin-bottom:0.4rem"><strong style="color:var(--text)">One step left.</strong>
+       Put your site key into your site so every device is licensed automatically:</p>
+    <ol>
+      <li>Open <strong>0-config-license.js</strong> in a plain-text editor.</li>
+      <li>Find the line beginning <code>const FOXHUNT_SITE_KEY</code> and replace that
+          <strong>entire line</strong> with the one below &mdash; const, quotes, semicolon
+          and all. (Pasting just the key between the quotes works too.)</li>
+      <li>Upload the file (Path A) or run <code>firebase deploy</code> (Path B).</li>
+      <li>Reload this page to confirm.</li>
+    </ol>
+
+    <div class="codebox" id="config-line"></div>
+    <button onclick="copyLine()" id="copy-btn">Copy this line</button>
+
+    <div class="msg caution" id="issued-note" style="display:none">
+      <strong>Keep a copy of your site key.</strong><br>
+      It is your permanent license. Save it somewhere outside your web host — with
+      your other backups, or in an email to yourself. It never expires, works on
+      any domain you move to, and needs no further contact with anyone.
+    </div>
+    <button class="secondary" onclick="showForm()">Check a different key</button>
+
+    <p id="record-note" style="font-size:0.72rem;margin-top:1.2rem"></p>
+  </div>
+
+</div>
+
+<footer>
+  © 2026 Andrew Lindsay,
+  <a href="https://www.qrz.com/db/WA0MCS" target="_blank">WA0MCS</a>
+</footer>
+
+<script src="0-config-license.js"></script>
+<script>
+// ── Andrew's license PUBLIC key (raw P-256 point, base64url) ──
+// NOT a secret — it ships in every package by design. It can only CHECK
+// keys, never mint them. Generate with foxpursuit-keygen.js.
+const LICENSE_PUBKEY = 'BMRn5-28UCVwAL_bvuUCL_idE1M-BUkpBk4gT7Nlz498yj22lfmN_agTwsVIi7IoB2w7gA7FfYXxbRMfY1aMVv0';
+// ─────────────────────────────────────────────────────────────
+
+// ── License issuance endpoint (Cloudflare Worker) ────────────
+// Called ONCE, at activation, to trade the Gumroad key from your purchase for a
+// signed Fox Pursuit license key. After that the app never contacts it again:
+// the signed key is verified offline, in the browser, forever.
+const LICENSE_ISSUE_URL = 'https://foxpursuit-license-issue.andrew-7f8.workers.dev/';
+const LICENSE_PRODUCT   = 'team';    // which pool to draw from (FP12: was 'multi')
+const LICENSE_EDITION   = 'team';    // the ed claim a key must carry to run this package
+// ─────────────────────────────────────────────────────────────
+
+
+const currentDomain = window.location.hostname.toLowerCase();
+
+// v2026.9 (B16): the edition a key carries, in words. The claim is checked on
+// every path; now it is shown too, so a buyer can see which product a key is for.
+function edLabel(ed) {
+  if (ed === 'team') return 'Team';
+  if (ed === 'solo') return 'Solo';
+  return '(none — issued before October 2026)';
+}
+
+let verifiedKey = '';
+
+// ── Offline signature check (identical to foxhunt-license.js) ──
+function b64uToBytes(s) {
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function verifyKey(key) {
+  const parts = String(key || '').trim().split('.');
+  if (parts.length !== 3 || parts[0] !== 'FP1') return null;
+  if (!LICENSE_PUBKEY || /^PASTE_/.test(LICENSE_PUBKEY)) return null;
+  if (!window.crypto || !crypto.subtle) return null;
+  try {
+    const sig     = b64uToBytes(parts[2]);
+    const payload = JSON.parse(new TextDecoder().decode(b64uToBytes(parts[1])));
+    if (sig.length !== 64) return null;
+    const pub = await crypto.subtle.importKey(
+      'raw', b64uToBytes(LICENSE_PUBKEY),
+      { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']
+    );
+    const signed = new TextEncoder().encode(parts[0] + '.' + parts[1]);
+    const ok = await crypto.subtle.verify(
+      { name: 'ECDSA', hash: 'SHA-256' }, pub, sig, signed
+    );
+    return ok ? payload : null;
+  } catch (e) { return null; }
+}
+
+// ── On load: report what 0-config-license.js currently holds ──
+window.addEventListener('DOMContentLoaded', async () => {
+  const configured = (typeof FOXHUNT_SITE_KEY !== 'undefined') ? String(FOXHUNT_SITE_KEY || '') : '';
+  if (/^\s*FP1\./.test(configured)) {
+    const p = await verifyKey(configured);
+    // v2026.9 (B19): the status view applies the same edition rule as the two
+    // paste paths and the app pages. Before this, a pre-FP12 or Solo key in the
+    // config showed "This site is licensed" here while every gated page walled
+    // it - and the wall sends people to this very page (seen on /demo, 2026-10-02).
+    if (p && p.ed !== LICENSE_EDITION) {
+      showForm();
+      showMsg('The key currently in 0-config-license.js is not a Fox Pursuit Team site key — ' +
+              'it is a Solo key, or a key issued before October 2026 with no edition. The app pages ' +
+              'refuse it. Paste the license key from your Team purchase receipt below and a Team ' +
+              'site key will be issued.', 'error');
+      return;
+    }
+    if (p) {
+      document.getElementById('lic-id').textContent       = p.id || '';
+      document.getElementById('lic-date').textContent     = p.dt || '';
+      document.getElementById('lic-ed').textContent       = edLabel(p.ed);
+      document.getElementById('checking-msg').style.display  = 'none';
+      document.getElementById('licensed-area').style.display = 'block';
+      return;
+    }
+    showForm();
+    showMsg('The key currently in 0-config-license.js could not be verified. ' +
+            'It may have been truncated when it was pasted. Paste it again below.', 'error');
+    return;
+  }
+  showForm();
+});
+
+function showForm() {
+  document.getElementById('checking-msg').style.display   = 'none';
+  document.getElementById('licensed-area').style.display  = 'none';
+  document.getElementById('install-area').style.display   = 'none';
+  document.getElementById('form-area').style.display      = 'block';
+}
+
+// ── Check the pasted key ──────────────────────────────────────
+// A private key WITH or WITHOUT its PEM header lines. Pasting only the middle of
+// the .pem is at least as likely as pasting the whole file, and it is the same
+// exposure either way. DER always begins with an ASN.1 SEQUENCE, which in base64
+// is "MIG" or "MII" — neither a licence key (FP1.) nor our public key (starts B)
+// can collide with that.
+function looksLikePrivateKey(v) {
+  if (/-----BEGIN[ A-Z]*PRIVATE KEY-----/.test(v)) return true;
+  return /^MI[GI][A-Za-z0-9+/=]{60,}$/.test(String(v || '').replace(/\s+/g, ''));
+}
+
+async function checkKey() {
+  const raw = document.getElementById('license-key').value.trim();
+  // A licence key is base64url, so any whitespace inside it arrived in transit —
+  // email clients wrap long lines. Clean it rather than rejecting it, and use
+  // the cleaned value everywhere below, including in the config line we emit.
+  const key = raw.replace(/\s+/g, '');
+  if (!key) { showMsg('Paste your license key.', 'error'); return; }
+
+  // Catch it here, before it can reach a file on a web server. The three long
+  // strings in this system all come out of the same tool, and two of them are
+  // meant to be public — so the one that is not needs naming on sight.
+  if (looksLikePrivateKey(raw)) {
+    showMsg('STOP — that is your PRIVATE key. It must never be pasted here or ' +
+            'into any file on a web server: this page and 0-config-license.js are ' +
+            'both public. Keep the .pem on your own machine. What belongs here is ' +
+            'the LICENSE key from your purchase, which begins with FP1.', 'error');
+    return;
+  }
+  if (!/\./.test(key) && /^[A-Za-z0-9_-]{80,100}$/.test(key)) {
+    showMsg('That looks like your PUBLIC key, not a license key. The public key ' +
+            'belongs in foxhunt-license.js and setup.html. A license key begins ' +
+            'with FP1. and contains dots.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('check-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Checking…';
+  showMsg('', '');
+
+  // ── Modern key: verified offline, no network at all ─────────
+  if (/^FP1\./.test(key)) {
+    const p = await verifyKey(key);
+    if (!p) {
+      showMsg('That key could not be verified. Make sure you copied ALL of it — ' +
+              'the key is about 150 characters long and is easy to truncate. ' +
+              'If it still fails, contact WA0MCS.', 'error');
+      resetBtn(btn);
+      return;
+    }
+    if (p.ed !== LICENSE_EDITION) {
+      showMsg('That is not a Fox Pursuit Team site key — it is a Solo key, or a key ' +
+              'issued before October 2026 with no edition. Paste the license key from ' +
+              'your Team purchase receipt instead, and a Team site key will be issued.', 'error');
+      resetBtn(btn);
+      return;
+    }
+    verifiedKey = key;
+    document.getElementById('ok-id').textContent       = p.id || '';
+    document.getElementById('ok-date').textContent     = p.dt || '';
+    document.getElementById('ok-ed').textContent       = edLabel(p.ed);
+    document.getElementById('config-line').textContent =
+      'const FOXHUNT_SITE_KEY = "' + key + '";';
+    document.getElementById('form-area').style.display    = 'none';
+    document.getElementById('install-area').style.display = 'block';
+    resetBtn(btn);
+    return;
+  }
+
+  // ── Otherwise: a purchase key from Gumroad. Trade it for a signed one. ──
+  // This is the ONLY network call the licensing system ever makes, and it happens
+  // once per site. It is ISSUANCE, not enforcement: nothing here decides whether
+  // an already-licensed installation runs.
+  btn.innerHTML = '<span class="spinner"></span>Checking your purchase…';
+  let data;
+  try {
+    const resp = await fetch(LICENSE_ISSUE_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ license_key: key, product: LICENSE_PRODUCT, domain: currentDomain }),
+    });
+    data = await resp.json();
+  } catch (e) {
+    // Unreachable. There is nothing to fail open INTO - the buyer needs a real
+    // signed key - so say so plainly and let them try again. Nobody already
+    // running is affected: their key was issued once and is never re-checked.
+    showMsg('Could not reach the license service. Your purchase is fine — please ' +
+            'check your internet connection and try again in a few minutes. If it ' +
+            'keeps failing, contact WA0MCS and a key will be sent to you directly.',
+            'error');
+    resetBtn(btn); return;
+  }
+
+  if (!data || !data.success) {
+    const msg = (data && data.message) ? data.message : 'That key could not be verified.';
+    showMsg(msg + (data && data.retry ? '' :
+            ' Check that you copied the whole key from your purchase receipt. ' +
+            'If you believe this is wrong, contact WA0MCS.'), 'error');
+    resetBtn(btn); return;
+  }
+
+  // Verify what we were handed before showing it to anyone. The signature is
+  // checked against the public key in this package, so a wrong or damaged key
+  // cannot reach 0-config-license.js even if the service misbehaves.
+  const issued  = String(data.license || '').trim();
+  const payload = await verifyKey(issued);
+  if (!payload) {
+    showMsg('The license service returned a key this build cannot verify. Please ' +
+            'contact WA0MCS with your purchase details.', 'error');
+    resetBtn(btn); return;
+  }
+  if (payload.ed !== LICENSE_EDITION) {
+    showMsg('The license service returned a key for the wrong edition. Please ' +
+            'contact WA0MCS with your purchase details.', 'error');
+    resetBtn(btn); return;
+  }
+
+  verifiedKey = issued;
+  document.getElementById('ok-id').textContent       = payload.id || '';
+  document.getElementById('ok-date').textContent     = payload.dt || '';
+  document.getElementById('ok-ed').textContent       = edLabel(payload.ed);
+  document.getElementById('config-line').textContent =
+    'const FOXHUNT_SITE_KEY = "' + issued + '";';
+  document.getElementById('issued-note').style.display = 'block';
+  document.getElementById('record-note').textContent = data.reissued
+    ? 'This purchase already had a site key; the same one was returned.'
+    : 'Your site key has been issued and recorded with the seller.';
+  document.getElementById('form-area').style.display    = 'none';
+  document.getElementById('install-area').style.display = 'block';
+  resetBtn(btn);
+}
+
+function copyLine() {
+  const text = document.getElementById('config-line').textContent;
+  const btn  = document.getElementById('copy-btn');
+  const done = () => { btn.textContent = 'Copied ✓';
+                       setTimeout(() => btn.textContent = 'Copy this line', 2000); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => selectFallback());
+  } else selectFallback();
+
+  function selectFallback() {
+    const r = document.createRange();
+    r.selectNodeContents(document.getElementById('config-line'));
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    btn.textContent = 'Selected — press Ctrl+C';
+  }
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent  = text;
+  el.className    = 'msg ' + type;
+  el.style.display = text ? 'block' : 'none';
+}
+
+function resetBtn(btn) {
+  btn.disabled    = false;
+  btn.textContent = 'Check License Key →';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Repair local data</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <!-- v2026.9 (C10). This page loads NO Firebase code on purpose: the dashboard
+       cannot delete the Firestore database it holds open, and a page that never
+       opens it can. Nothing else on the phone is touched. Styled like setup.html
+       so it works when everything else is broken. -->
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--bg:#0d0f14;--panel:#141720;--border:#2a2f3d;--accent:#f0a500;--text:#d8dce8;--muted:#9aa2b4;
+          --error:#e05a5a;--success:#50c878;--mono:'Courier New',monospace;}
+    body{background:var(--bg);color:var(--text);font-family:var(--mono);display:flex;flex-direction:column;
+         align-items:center;justify-content:center;min-height:100vh;padding:1rem;}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:4px;width:100%;max-width:560px;
+          padding:2.5rem 2rem;position:relative;z-index:1;box-shadow:0 0 60px rgba(0,0,0,0.6);}
+    .logo{text-align:center;margin-bottom:1.8rem;}
+    .logo .fox{font-size:2.5rem;display:block;margin-bottom:0.5rem;}
+    h1{color:var(--accent);font-size:1.1rem;letter-spacing:0.12em;margin-bottom:0.3rem;}
+    .subtitle{font-size:0.72rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;}
+    p{font-size:0.83rem;color:var(--muted);line-height:1.7;margin:1.2rem 0;}
+    .codebox{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:0.8rem;font-size:0.74rem;
+             line-height:1.6;color:var(--text);word-break:break-word;white-space:pre-wrap;margin-top:0.5rem;}
+    .btn{display:block;width:100%;margin-top:1.5rem;padding:0.72rem;background:var(--accent);color:#000;border:none;
+         border-radius:3px;font-family:var(--mono);font-size:0.88rem;font-weight:bold;letter-spacing:0.08em;
+         text-transform:uppercase;text-align:center;text-decoration:none;cursor:pointer;}
+    .btn.secondary{background:transparent;color:var(--accent);border:1px solid var(--border);margin-top:0.6rem;}
+    footer{margin-top:1.5rem;font-size:0.65rem;color:var(--muted);text-align:center;}
+    footer a{color:var(--accent);}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <span class="fox">🦊</span>
+    <h1>FOX PURSUIT</h1>
+    <div class="subtitle">Repair local data</div>
+  </div>
+  <p>Clearing this phone's local copy of the hunt database. Your sign-in, handle and downloaded
+     map areas are not touched. A hunt created offline that never reached the server is lost.</p>
+  <div class="codebox" id="log">Working…</div>
+  <a class="btn" id="back" href="dashboard.html" style="display:none">Open the dashboard →</a>
+  <a class="btn secondary" id="retry" href="#" style="display:none" onclick="location.reload();return false;">Try again</a>
+</div>
+<footer>© 2026 Andrew Lindsay, <a href="https://www.qrz.com/db/WA0MCS" target="_blank">WA0MCS</a></footer>
+<script>
+(async function () {
+  const logEl = document.getElementById('log');
+  const lines = [];
+  const say = s => { lines.push(s); logEl.textContent = lines.join('\n'); };
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+  function del(name) {
+    return new Promise(res => {
+      let settled = false;
+      const finish = s => { if (!settled) { settled = true; res(s); } };
+      try {
+        const rq = indexedDB.deleteDatabase(name);
+        rq.onsuccess = () => finish('  deleted');
+        rq.onerror   = () => finish('  FAILED: ' + ((rq.error && rq.error.message) || 'error'));
+        rq.onblocked = () => finish('  blocked \u2014 another Fox Pursuit window still has it open. Close every Fox Pursuit window in the app switcher, then open Repair again.');
+      } catch (e) { finish('  FAILED: ' + e.message); }
+      setTimeout(() => finish('  no answer after 10 s \u2014 close every Fox Pursuit window in the app switcher and try again'), 10000);
+    });
+  }
+  let failed = false;
+  try {
+    const q = new URLSearchParams(location.search);
+    const p = (q.get('p') || '').trim();
+    // Firestore's database is named after the project. The dashboard passes the
+    // project id; where the browser can list databases, every firestore/* one is
+    // taken as well, so a renamed project is still caught.
+    const names = new Set();
+    if (/^[A-Za-z0-9._-]{1,80}$/.test(p)) names.add('firestore/[DEFAULT]/' + p + '/main');
+    try {
+      if (indexedDB.databases) {
+        const all = await withTimeout(indexedDB.databases(), 4000);
+        all.forEach(d => { if (d && d.name && d.name.indexOf('firestore/') === 0) names.add(d.name); });
+      }
+    } catch (e) { say('Could not list databases (' + e.message + '); using the project name.'); }
+    if (!names.size) {
+      say('No hunt database was found on this phone \u2014 nothing to repair.');
+    } else {
+      for (const n of names) {
+        say('Deleting ' + n + ' \u2026');
+        const r = await del(n);
+        say(r);
+        if (!/deleted/.test(r)) failed = true;
+      }
+    }
+    // The pointer to a hunt that may never have synced, and its carried-forward copy.
+    try {
+      sessionStorage.removeItem('huntId');
+      Object.keys(sessionStorage).forEach(k => { if (k.indexOf('fh_hunt_') === 0) sessionStorage.removeItem(k); });
+    } catch (e) {}
+    say(failed ? 'Not finished \u2014 see above.' : 'Done. Sign-in, handle and offline maps were not touched.');
+  } catch (e) {
+    failed = true;
+    say('FAILED: ' + (e && e.message ? e.message : e));
+  }
+  document.getElementById(failed ? 'retry' : 'back').style.display = 'block';
+  if (failed) document.getElementById('back').style.display = 'block';
+})();
+</script>
+</body>
+</html>

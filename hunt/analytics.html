@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Analytics</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="foxhunt.css"/>
+  <script src="0-config-foxhunt.js"></script>
+  <script src="foxhunt-theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    .stat-rows { margin:1rem 0 1.6rem; }
+    .stat-row { display:grid; gap:0.8rem; margin-bottom:0.8rem; }
+    @media(max-width:640px){ .stat-row{ grid-template-columns:repeat(2,1fr) !important; } }
+    .stat-card {
+      position:relative;
+      background:var(--panel); border:1px solid var(--border); border-radius:6px;
+      padding:0.9rem 1rem;
+    }
+    .stat-card .num { font-family:var(--mono); font-size:1.55rem; color:var(--accent); line-height:1.1; }
+    .stat-card .lbl { font-family:var(--mono); font-size:0.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-top:0.35rem; }
+    .info-i { position:absolute; top:0.35rem; right:0.5rem; color:var(--muted); text-decoration:none; font-size:0.85rem; line-height:1; opacity:0.7; }
+    .info-i:hover { color:var(--accent); opacity:1; }
+    .head-i { color:var(--muted); text-decoration:none; font-size:0.8rem; margin-left:0.4rem; opacity:0.7; }
+    .head-i:hover { color:var(--accent); opacity:1; }
+    .def-subhead { font-family:var(--mono); font-size:0.8rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em; margin:1.2rem 0 0.5rem; }
+    .def-list { margin:0 0 1rem; }
+    .def-list dt { font-family:var(--mono); font-size:0.72rem; color:var(--text,#d8dce8); font-weight:bold; margin-top:0.7rem; scroll-margin-top:5rem; }
+    .def-list dd { margin:0.15rem 0 0; font-size:0.8rem; color:var(--muted); line-height:1.5; }
+    #definitions { scroll-margin-top:5rem; }
+    .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin:1rem 0 1.6rem; }
+    @media(max-width:640px){ .chart-grid{ grid-template-columns:1fr; } }
+    .chart-card {
+      background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:1rem;
+    }
+    .chart-card.wide { grid-column:1 / -1; }
+    .chart-card h3 { font-family:var(--mono); font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin:0 0 0.8rem; }
+    .chart-wrap { position:relative; height:230px; }
+    table.hunts { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:0.72rem; }
+    table.hunts th, table.hunts td { padding:0.4rem 0.55rem; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+    table.hunts th { color:var(--muted); text-transform:uppercase; font-size:0.6rem; letter-spacing:0.04em; cursor:pointer; user-select:none; position:sticky; top:0; background:var(--bg); }
+    table.hunts th:hover { color:var(--accent); }
+    table.hunts td { color:var(--text,#d7e3f1); }
+    table.hunts td.acc { color:var(--accent); }
+    .table-scroll { overflow-x:auto; border:1px solid var(--border); border-radius:6px; max-height:60vh; overflow-y:auto; }
+    #an-guard { text-align:center; padding:3rem 1rem; font-family:var(--mono); color:var(--error); }
+    #an-status { font-family:var(--mono); font-size:0.8rem; color:var(--muted); padding:1rem 0; }
+    .an-note { font-family:var(--mono); font-size:0.66rem; color:var(--muted); margin-top:0.4rem; line-height:1.5; }
+  </style>
+  <script src="0-config-license.js"></script>
+  <script src="foxhunt-license.js"></script>
+</head>
+<body class="grid-bg">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="0-config-firebase.js"></script>
+<script src="foxhunt.js"></script>
+<script src="0-config-admin.js"></script>
+
+<div class="page-wrap">
+  <div id="an-content" style="display:none">
+  <h1 class="page-title">Analytics</h1>
+  <p class="page-subtitle">Anonymous usage summary (read-only)</p>
+  <p style="margin-top:-0.4rem"><a href="admin.html" style="font-family:var(--mono);font-size:0.8rem;color:var(--accent);text-decoration:none">→ Admin panel</a> &nbsp; <a href="SETUP.txt" target="_blank" style="font-family:var(--mono);font-size:0.8rem;color:var(--accent);text-decoration:none">→ Setup &amp; admin guide</a></p>
+    <div id="an-status">Loading analytics…</div>
+
+    <div id="an-main" style="display:none">
+      <div class="stat-rows" id="stat-rows"></div>
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>Bearing sources</h3>
+          <div class="chart-wrap"><canvas id="chart-bearings"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Submission platforms</h3>
+          <div class="chart-wrap"><canvas id="chart-platforms"></canvas></div>
+        </div>
+        <div class="chart-card wide">
+          <h3>Usage over time (by month)</h3>
+          <div class="chart-wrap"><canvas id="chart-time"></canvas></div>
+        </div>
+      </div>
+
+      <h2 class="section-heading">Per-hunt records <a class="head-i" href="#def-perhunt" title="Column definitions">&#9432;</a></h2>
+      <div class="table-scroll">
+        <table class="hunts" id="hunts-table">
+          <thead><tr id="hunts-head"></tr></thead>
+          <tbody id="hunts-body"></tbody>
+        </table>
+      </div>
+      <p class="an-note">Click a column header to sort. Location is coarse (~12.5-mile radius); no names, exact positions, or times are stored. Data is read-only here — clear or reset it in the Firebase console.</p>
+
+      <h2 class="section-heading" id="definitions">Definitions</h2>
+      <h3 class="def-subhead">Summary metrics</h3>
+      <dl class="def-list">
+        <dt id="def-hunts">Hunts</dt><dd>The total number of hunts STARTED, all-time. Counted when a hunt is created, so it includes hunts that were abandoned without being closed - those contribute nothing to the other figures below, which are recorded when a hunt is closed. This number will therefore always be the largest.</dd>
+        <dt id="def-participations">Participations</dt><dd>The total count of people-in-hunts across every hunt. One person joining three hunts counts as three participations.</dd>
+        <dt id="def-compass">Compass</dt><dd>How many bearings, all-time, were taken with the device's built-in compass.</dd>
+        <dt id="def-gps">GPS</dt><dd>How many bearings, all-time, came from GPS heading — your direction of travel while moving.</dd>
+        <dt id="def-manual">Manual</dt><dd>How many bearings, all-time, were entered by hand — typed in or set by tapping the map.</dd>
+        <dt id="def-total">Total Bearings</dt><dd>Every bearing submitted, all-time, from all sources combined (compass + GPS + manual).</dd>
+        <dt id="def-estimate">Formed an Estimate</dt><dd>The share of hunts in which enough bearings crossed to produce a probable fox location. Higher means hunts more often converged on an answer.</dd>
+        <dt id="def-avglength">Avg Hunt Length</dt><dd>The average time a hunt stayed open, from creation to close, in minutes.</dd>
+        <dt id="def-avgpart">Avg Participants / Hunt</dt><dd>The average number of distinct people who took part in each hunt.</dd>
+      </dl>
+      <h3 class="def-subhead" id="def-perhunt">Per-hunt record columns</h3>
+      <dl class="def-list">
+        <dt>Date</dt><dd>The date the hunt closed. No time of day is recorded.</dd>
+        <dt>People</dt><dd>How many distinct people took part in that hunt.</dd>
+        <dt>Bearings</dt><dd>Total bearings submitted in that hunt (compass + GPS + manual).</dd>
+        <dt>Cmp</dt><dd>Bearings from the compass in that hunt.</dd>
+        <dt>GPS</dt><dd>Bearings from GPS heading in that hunt.</dd>
+        <dt>Man</dt><dd>Bearings entered by hand — typed or map-tapped — in that hunt.</dd>
+        <dt>Mins</dt><dd>How many minutes the hunt was open.</dd>
+        <dt>Est</dt><dd>Whether that hunt's bearings crossed to produce a probable fox location (yes / no).</dd>
+        <dt>Close</dt><dd>How the hunt ended: "auto" (reached its time limit) or "manual" (the creator closed it).</dd>
+        <dt>iOS/And/Desk</dt><dd>A count of that hunt's submissions by device type — iOS / Android / Desktop.</dd>
+        <dt>Location (coarse)</dt><dd>The general area of the hunt, deliberately blurred to roughly a 12.5-mile radius. It never shows an exact location.</dd>
+        <dt>Build</dt><dd>The app version that recorded the hunt.</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => { insertNav(false); insertFooter(); });
+
+  requireAdmin(async (user, aDb) => {
+    document.getElementById('an-content').style.display = 'block';
+    loadAnalytics();
+  });
+
+  // Theme-aware palette for chart segments.
+  const css = getComputedStyle(document.documentElement);
+  const accent = (css.getPropertyValue('--accent') || '#f0a500').trim();
+  const muted  = (css.getPropertyValue('--muted')  || '#8a92a6').trim();
+  const border = (css.getPropertyValue('--border') || '#2a2f3a').trim();
+  const PALETTE = [accent, '#4a9eff', '#4ade80', '#a78bfa', '#f472b6', '#ffb84a'];
+
+  let hunts = [];               // analyticsHunts docs
+  let sortKey = 'closeDate', sortDir = -1;
+  let loaded = false;           // guard against the auth callback firing twice
+
+  async function loadAnalytics() {
+    if (loaded) return; loaded = true;   // the auth callback can fire more than once
+    const status = document.getElementById('an-status');
+    let totals = {};
+    try {
+      const tSnap = await adminDb.collection('analytics').doc('totals').get();
+      totals = tSnap.exists ? tSnap.data() : {};
+      const hSnap = await adminDb.collection('analyticsHunts').get();
+      hunts = hSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      status.textContent = 'Could not read analytics. Confirm your UID is allowed to read analytics in the Firestore security rules. (' + e.message + ')';
+      return;
+    }
+    document.getElementById('an-status').style.display = 'none';
+    document.getElementById('an-main').style.display = 'block';
+    // Render stats + table first, charts last, so a chart hiccup can't blank the page.
+    try {
+      renderStats(totals);
+      renderTable();
+      renderCharts(totals);
+    } catch (e) {
+      status.style.display = 'block';
+      status.textContent = 'Rendered with an error: ' + e.message;
+    }
+  }
+
+  function n(v) { return (typeof v === 'number' && !isNaN(v)) ? v : 0; }
+
+  function renderStats(t) {
+    // Rollups computed from the per-hunt records.
+    const hc = hunts.length;
+    const partSum = hunts.reduce((a,h)=>a+n(h.participants),0);
+    const avgPart = hc ? (partSum/hc) : 0;
+    const withEst = hunts.filter(h => h.estimateFormed === true).length;
+    const successRate = hc ? Math.round(100*withEst/hc) : 0;
+    const durVals = hunts.map(h=>n(h.durationMinutes)).filter(v=>v>0);
+    const avgDur = durVals.length ? Math.round(durVals.reduce((a,b)=>a+b,0)/durVals.length) : 0;
+
+    // Three rows: [key, value, label]. key → #def-<key> anchor in the Definitions section.
+    const rows = [
+      [ ['hunts', n(t.hunts) || hc, 'Hunts'],
+        ['participations', n(t.participations) || partSum, 'Participations'] ],
+      [ ['compass', n(t.bearingsCompass), 'Compass'],
+        ['gps', n(t.bearingsGps), 'GPS'],
+        ['manual', n(t.bearingsManual), 'Manual'],
+        ['total', n(t.bearingsTotal), 'Total Bearings'] ],
+      [ ['estimate', successRate + '%', 'Formed an Estimate'],
+        ['avglength', avgDur + 'm', 'Avg Hunt Length'],
+        ['avgpart', avgPart.toFixed(1), 'Avg Participants / Hunt'] ],
+    ];
+    const card = c =>
+      `<div class="stat-card"><a class="info-i" href="#def-${c[0]}" title="What is this?">&#9432;</a>` +
+      `<div class="num">${c[1]}</div><div class="lbl">${c[2]}</div></div>`;
+    document.getElementById('stat-rows').innerHTML = rows.map(r =>
+      `<div class="stat-row" style="grid-template-columns:repeat(${r.length},1fr)">` +
+      r.map(card).join('') + `</div>`).join('');
+  }
+
+  const chartDefaults = { plugins:{ legend:{ labels:{ color:muted, font:{family:'monospace',size:11} } } } };
+
+  function doughnut(id, labels, data) {
+    const el = document.getElementById(id);
+    Chart.getChart(el)?.destroy();   // clear any prior chart on this canvas
+    new Chart(el, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:PALETTE, borderColor:border, borderWidth:1 }] },
+      options:{ responsive:true, maintainAspectRatio:false, ...chartDefaults }
+    });
+  }
+
+  function renderCharts(t) {
+    if (typeof Chart === 'undefined') { return; }   // chart library unavailable — skip gracefully
+    // Bearing sources — prefer live totals; fall back to summing per-hunt.
+    let bc = n(t.bearingsCompass), bg = n(t.bearingsGps), bm = n(t.bearingsManual);
+    if (!(bc+bg+bm)) {
+      hunts.forEach(h => { bc+=n(h.compass); bg+=n(h.gps); bm+=n(h.manual); });
+    }
+    doughnut('chart-bearings', ['Compass','GPS','Manual'], [bc,bg,bm]);
+
+    // Platform mix — aggregate across per-hunt records.
+    let pi=0, pa=0, pd=0;
+    hunts.forEach(h => { const p=h.platform||{}; pi+=n(p.ios); pa+=n(p.android); pd+=n(p.desktop); });
+    doughnut('chart-platforms', ['iOS','Android','Desktop'], [pi,pa,pd]);
+
+    // Usage over time — bucket hunts + bearings by month from closeDate.
+    const byMonth = {};
+    hunts.forEach(h => {
+      const m = monthKey(h.closeDate);
+      if (!m) return;
+      if (!byMonth[m]) byMonth[m] = { hunts:0, bearings:0 };
+      byMonth[m].hunts += 1;
+      byMonth[m].bearings += n(h.total);
+    });
+    const months = Object.keys(byMonth).sort();
+    const timeEl = document.getElementById('chart-time');
+    Chart.getChart(timeEl)?.destroy();
+    new Chart(timeEl, {
+      type:'line',
+      data:{ labels:months, datasets:[
+        { label:'Hunts', data:months.map(m=>byMonth[m].hunts), borderColor:accent, backgroundColor:accent, tension:0.25, yAxisID:'y' },
+        { label:'Bearings', data:months.map(m=>byMonth[m].bearings), borderColor:'#4a9eff', backgroundColor:'#4a9eff', tension:0.25, yAxisID:'y1' }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, ...chartDefaults,
+        scales:{
+          x:{ ticks:{ color:muted, font:{family:'monospace',size:10} }, grid:{ color:border } },
+          y:{ position:'left', beginAtZero:true, ticks:{ color:muted, font:{family:'monospace',size:10} }, grid:{ color:border }, title:{ display:true, text:'Hunts', color:muted } },
+          y1:{ position:'right', beginAtZero:true, ticks:{ color:muted, font:{family:'monospace',size:10} }, grid:{ drawOnChartArea:false }, title:{ display:true, text:'Bearings', color:muted } }
+        }
+      }
+    });
+  }
+
+  function monthKey(cd) {
+    if (!cd) return null;
+    if (typeof cd === 'string') return cd.slice(0,7);            // "YYYY-MM-DD" → "YYYY-MM"
+    // Legacy numeric/timestamp closeDate
+    let ms = (typeof cd === 'number') ? cd : (cd.toMillis ? cd.toMillis() : null);
+    if (!ms) return null;
+    const d = new Date(ms);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  function cellDate(cd) {
+    if (typeof cd === 'string') return cd;
+    if (typeof cd === 'number') return new Date(cd).toISOString().slice(0,10);
+    if (cd && cd.toMillis) return new Date(cd.toMillis()).toISOString().slice(0,10);
+    return '—';
+  }
+  function loc(h) { return h.location ? (h.location.lat + ', ' + h.location.lng) : '—'; }
+  function plat(h) { const p=h.platform||{}; return `${n(p.ios)}/${n(p.android)}/${n(p.desktop)}`; }
+
+  const COLS = [
+    ['closeDate','Date', h=>cellDate(h.closeDate)],
+    ['participants','People', h=>n(h.participants)],
+    ['total','Bearings', h=>n(h.total)],
+    ['compass','Cmp', h=>n(h.compass)],
+    ['gps','GPS', h=>n(h.gps)],
+    ['manual','Man', h=>n(h.manual)],
+    ['durationMinutes','Mins', h=>n(h.durationMinutes)],
+    ['estimateFormed','Est', h=>h.estimateFormed ? 'yes' : 'no'],
+    ['closeType','Close', h=>h.closeType||'—'],
+    ['platform','iOS/And/Desk', h=>plat(h)],
+    ['location','Location (coarse)', h=>loc(h)],
+    ['build','Build', h=>h.build||'—'],
+  ];
+
+  function renderTable() {
+    if (!hunts.length) { document.getElementById('hunts-body').innerHTML =
+      '<tr><td colspan="12" style="color:var(--muted);padding:1rem">No hunts recorded yet.</td></tr>'; return; }
+    document.getElementById('hunts-head').innerHTML = COLS.map(c =>
+      `<th data-k="${c[0]}">${c[1]}${sortKey===c[0] ? (sortDir>0?' ▲':' ▼') : ''}</th>`).join('');
+    document.querySelectorAll('#hunts-head th').forEach(th =>
+      th.onclick = () => { const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} renderTable(); });
+
+    const sorted = [...hunts].sort((a,b) => {
+      let av=a[sortKey], bv=b[sortKey];
+      if (sortKey==='closeDate'){ av=cellDate(av); bv=cellDate(bv); }
+      if (typeof av==='number'||typeof bv==='number'){ av=n(av); bv=n(bv); }
+      if (av<bv) return -1*sortDir; if (av>bv) return 1*sortDir; return 0;
+    });
+    document.getElementById('hunts-body').innerHTML = sorted.map(h =>
+      '<tr>' + COLS.map((c,i) => `<td class="${i===0?'acc':''}">${c[2](h)}</td>`).join('') + '</tr>').join('');
+  }
+</script>
+</body>
+</html>

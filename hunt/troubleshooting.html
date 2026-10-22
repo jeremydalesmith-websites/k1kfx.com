@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Troubleshooting</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="foxhunt.css"/>
+  <script src="0-config-foxhunt.js"></script>
+  <script src="foxhunt-theme.js"></script>
+  <style>
+    /* Print (v72.9). Clubs hand these pages around on paper: plain black on
+       white, no chrome, and the iPhone box expanded (see the beforeprint hook). */
+    .print-link { margin: -0.6rem 0 1.4rem; }
+    .print-link button {
+      background: none; border: 1px solid var(--border); border-radius: 3px;
+      color: var(--accent); font-family: var(--mono); font-size: 0.78rem;
+      letter-spacing: 0.05em; padding: 0.35rem 0.8rem; cursor: pointer;
+    }
+    @media print {
+      * { background: transparent !important; color: #000 !important;
+          box-shadow: none !important; text-shadow: none !important; }
+      body, body.grid-bg { background: #fff !important; }
+      nav, footer, .print-link { display: none !important; }
+      .page-wrap { max-width: none; padding: 0; }
+      a { text-decoration: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; }
+      h1, h2, h3 { page-break-after: avoid; }
+      p, li { orphans: 3; widows: 3; }
+      .print-only { display: block !important; }
+    }
+    /* v72.10: a version line that appears only on paper, so a printout can be
+       told from a newer one. Hidden on screen. */
+    .print-only { display: none; font-family: var(--mono); font-size: 0.78rem;
+                  margin-top: 1.6rem; }
+  </style>
+</head>
+<body class="grid-bg">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="0-config-firebase.js"></script>
+<script src="foxhunt.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    insertNav(true); insertFooter();
+    { const el = document.getElementById('print-build-line');
+      if (el && typeof FH_BUILD !== 'undefined') el.textContent = 'Current as of Fox Pursuit ' + FH_BUILD; }
+    fhOptionalAuth();
+    renderContentBlocks('troubleshooting-content', (typeof FOXHUNT_CONFIG !== 'undefined' ? FOXHUNT_CONFIG.troubleshooting : []));
+  });
+</script>
+
+<div class="page-wrap">
+  <h1 class="page-title">Troubleshooting</h1>
+  <p class="page-subtitle">Fixes for common issues</p>
+  <div class="print-link"><button type="button" onclick="window.print()">&#9113; Print this page</button></div>
+
+  <!-- Content is built from the "troubleshooting" blocks in 0-config-foxhunt.js -->
+  <div id="troubleshooting-content"></div>
+  <p class="print-only" id="print-build-line"></p>
+</div>
+</div>
+<script>
+  // Open the iPhone box (and any other <details>) for printing, whether Print
+  // came from the button or the browser menu, then restore afterwards.
+  (function () {
+    var opened = [];
+    window.addEventListener('beforeprint', function () {
+      opened = [];
+      document.querySelectorAll('details:not([open])').forEach(function (d) { d.open = true; opened.push(d); });
+    });
+    window.addEventListener('afterprint', function () {
+      opened.forEach(function (d) { d.open = false; }); opened = [];
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+/* ============================================================
+   Fox Pursuit — Shared Stylesheet
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0d0f14;
+  --panel:   #141720;
+  --panel2:  #1a1e2a;
+  --border:  #2a2f3d;
+  --accent:  #f0a500;
+  --accent-rgb: 240,165,0;
+  --bg-rgb:     13,15,20;
+  --accent2: #e05a00;
+  --text:    #d8dce8;
+  --muted:   #e6ddc4;
+  --error:   #e05a5a;
+  --success: #50c878;
+  --mono:    'Share Tech Mono', monospace;
+  --sans:    'Barlow', sans-serif;
+}
+
+/* ── Owner-selectable themes (set "theme" in 0-config-foxhunt.js). Only the app
+      chrome is re-skinned; the MAP keeps its own functional colors. ────────── */
+[data-theme="light"] {
+  --bg:#f4f1ea; --bg-rgb:244,241,234; --panel:#ffffff; --panel2:#eceadf; --border:#d6cfbe;
+  --accent:#b8780a; --accent-rgb:184,120,10; --accent2:#8c5400; --text:#26282d; --muted:#5c513a;
+  --error:#c0392b; --success:#2e7d32;
+}
+[data-theme="midnight"] {
+  --bg:#0a1020; --bg-rgb:10,16,32; --panel:#111a2e; --panel2:#17223a; --border:#26324d;
+  --accent:#28c7e0; --accent-rgb:40,199,224; --accent2:#1684a4; --text:#d7e3f1; --muted:#b7c7df;
+}
+[data-theme="forest"] {
+  --bg:#0c130f; --bg-rgb:12,19,15; --panel:#131d17; --panel2:#1a271e; --border:#2b3b2f;
+  --accent:#57c66a; --accent-rgb:87,198,106; --accent2:#2f9148; --text:#d8e4da; --muted:#c1d3be;
+}
+[data-theme="graphite"] {
+  --bg:#15171a; --bg-rgb:21,23,26; --panel:#1d2024; --panel2:#262a30; --border:#383d45;
+  --accent:#cdd6e0; --accent-rgb:205,214,224; --accent2:#9aa3ad; --text:#e2e6ea; --muted:#aeb6bf;
+}
+[data-theme="desert"] {
+  --bg:#2c2014; --bg-rgb:44,32,20; --panel:#3a2b1c; --panel2:#4c3924; --border:#66492b;
+  --accent:#f2a83c; --accent-rgb:242,168,60; --accent2:#c06a1c; --text:#f6ecd9; --muted:#ddc9a6;
+}
+[data-theme="high-contrast"] {
+  --bg:#000000; --bg-rgb:0,0,0; --panel:#0b0b0b; --panel2:#161616; --border:#4a4a4a;
+  --accent:#ffd400; --accent-rgb:255,212,0; --accent2:#ffaa00; --text:#ffffff; --muted:#ededed;
+  --error:#ff5a5a; --success:#46e08a;
+}
+[data-theme="violet"] {
+  --bg:#100a18; --bg-rgb:16,10,24; --panel:#181122; --panel2:#20162e; --border:#332445;
+  --accent:#b07cff; --accent-rgb:176,124,255; --accent2:#7d3fd0; --text:#e4ddf0; --muted:#cdc2e0;
+}
+
+html { scroll-behavior: smooth; background: var(--bg); }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  position: relative;
+}
+
+body.grid-bg::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Owner-supplied background image with a readability wash of the theme color. */
+body.image-bg::before {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(var(--bg-rgb,13,15,20), var(--bg-dim,0.6)),
+                    rgba(var(--bg-rgb,13,15,20), var(--bg-dim,0.6))),
+    var(--bg-image, none);
+  background-size: cover, var(--bg-size, cover);
+  background-position: center, var(--bg-pos, center);
+  background-repeat: no-repeat, var(--bg-repeat, no-repeat);
+  background-attachment: fixed, var(--bg-attach, scroll);
+}
+/* "none" mode: solid theme background, no overlay. */
+body.no-bg::before { content: none; }
+
+/* ── NAV ─────────────────────────────────────────────────── */
+.fh-demo-banner { /* v72.11 demo mode */
+  background: #f59e0b; color: #111; font-weight: 600; font-size: 0.78rem;
+  text-align: center; padding: 0.3rem 0.7rem; letter-spacing: 0.02em;
+}
+nav {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  z-index: 100;
+}
+.nav-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 0.5rem;
+  text-decoration: none;
+  padding: 0.7rem 0;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
+}
+.nav-logo img { width: 28px; height: 28px; }
+.nav-logo span {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  overflow-x: auto;
+}
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 0.9rem 0.7rem;
+  white-space: nowrap;
+  transition: color 0.2s;
+  border-bottom: 2px solid transparent;
+}
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.nav-right {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-left: auto;
+  padding-left: 1rem;
+  flex-shrink: 0;
+}
+.nav-user {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+.nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nav-btn.danger:hover { border-color: var(--error); color: var(--error); }
+
+/* Hamburger for mobile */
+.nav-hamburger {
+  display: none;
+  background: none; border: none;
+  color: var(--muted); font-size: 1.3rem;
+  cursor: pointer; padding: 0.5rem;
+  margin-left: auto;
+}
+.nav-mobile-menu {
+  display: none;
+  flex-direction: column;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 0;
+}
+.nav-mobile-menu a {
+  color: var(--muted);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.7rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  transition: color 0.2s;
+}
+.nav-mobile-menu a:last-child { border-bottom: none; }
+.nav-mobile-menu a:hover { color: var(--accent); }
+.nav-mobile-menu.open { display: flex; }
+
+@media(max-width: 700px) {
+  .nav-links { display: none; }
+  /* v2026.2 (NAV-01): the whole user section is hidden on narrow screens —
+     Sign Out is the last entry of the hamburger menu — so the bar always fits
+     a 375-px phone. Before, logo + build chip + Sign Out + hamburger overflowed
+     and the hamburger sat off the right edge. */
+  .nav-right { display: none; }
+  .nav-hamburger { display: block; }
+  .nav-logo { margin-right: 0.6rem; }
+  .nav-inner { overflow: hidden; }
+}
+
+/* ── PAGE WRAPPER ────────────────────────────────────────── */
+.page-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2.5rem 1.2rem 4rem;
+  position: relative; z-index: 1;
+}
+
+/* ── TYPOGRAPHY ──────────────────────────────────────────── */
+.page-title {
+  font-family: var(--mono);
+  font-size: 1.2rem;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  margin-bottom: 0.3rem;
+}
+.page-subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+.section-heading {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.8rem;
+  margin-top: 2rem;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.section-heading::after { content:''; flex:1; height:1px; background:var(--border); }
+.section-heading:first-child { margin-top: 0; }
+
+p { font-size: 0.92rem; line-height: 1.75; color: var(--text); margin-bottom: 1rem; }
+p:last-child { margin-bottom: 0; }
+a { color: var(--accent); }
+a:hover { filter: brightness(1.18); }
+
+/* ── CARDS ───────────────────────────────────────────────── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1.4rem 1.6rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Configurable content sub-headings (Contact / About) ──── */
+.content-subheading {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  margin: 1.7rem 0 0.5rem;
+}
+.content-subheading:first-child { margin-top: 0; }
+
+/* ── FORMS ───────────────────────────────────────────────── */
+label.field-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+  margin-top: 1rem;
+}
+label.field-label:first-child { margin-top: 0; }
+
+input[type="text"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.6rem 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(128,128,128,0.35);
+}
+select { appearance: none; cursor: pointer; }
+textarea { resize: vertical; min-height: 80px; }
+
+.btn {
+  display: inline-block;
+  padding: 0.65rem 1.4rem;
+  border: none; border-radius: 3px;
+  font-family: var(--mono); font-size: 0.82rem;
+  font-weight: bold; letter-spacing: 0.08em;
+  text-transform: uppercase; cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, opacity 0.2s, transform 0.1s;
+}
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--accent); color: #000; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.outline {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+.btn.outline:hover { background: rgba(128,128,128,0.12); }
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.full { width: 100%; text-align: center; }
+
+.msg { font-family: var(--mono); font-size: 0.78rem; min-height: 1.1em; margin-top: 0.5rem; }
+.msg.error   { color: var(--error); }
+.msg.success { color: var(--success); }
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  position: relative; z-index: 1;
+}

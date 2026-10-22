@@ -1,0 +1,34 @@
+# Fox Pursuit — crawler policy
+# Public information pages ARE indexable. The app, login, admin, and setup pages
+# are not, and neither are data/config/doc files.
+#
+# IMPORTANT: the render resources the PUBLIC pages need — foxhunt.js,
+# 0-config-foxhunt.js, foxhunt-theme.js, 0-config-firebase.js — are left CRAWLABLE
+# on purpose. The public pages build their visible content from these via
+# JavaScript, so blocking them would make Google see nearly-empty pages and hurt
+# search ranking. Do not add them to the Disallow list.
+
+User-agent: *
+
+# App / login / admin / setup pages (not for search)
+Disallow: /index.html
+Disallow: /dashboard.html
+Disallow: /hunt.html
+Disallow: /admin.html
+Disallow: /analytics.html
+Disallow: /setup.html
+
+# Admin-only / app-only scripts (not used by the public pages)
+Disallow: /0-config-admin.js
+Disallow: /foxhunt-license.js
+Disallow: /sw.js
+
+# Data, rules, docs, and non-active example assets
+Disallow: /blocked-usernames.txt
+Disallow: /firestore.rules
+Disallow: /firebase.json
+Disallow: /SETUP.txt
+Disallow: /LICENSE.txt
+Disallow: /favicon_foxtail.svg
+Disallow: /favicon_original.svg
+Disallow: /foxtail_1x1.jpg

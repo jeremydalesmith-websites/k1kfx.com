@@ -1,0 +1,188 @@
+============================================================
+  FOX HUNT WEB APPLICATION
+  END USER LICENSE AGREEMENT (EULA)
+  Andrew Lindsay, WA0MCS
+  Effective Date: June 2026
+============================================================
+
+PLEASE READ THIS AGREEMENT CAREFULLY BEFORE USING THIS
+SOFTWARE. BY ACTIVATING, INSTALLING, OR USING THE FOX HUNT
+WEB APPLICATION, YOU AGREE TO BE BOUND BY THE TERMS OF THIS
+AGREEMENT. IF YOU DO NOT AGREE, DO NOT USE THE SOFTWARE.
+
+------------------------------------------------------------
+1. GRANT OF LICENSE
+------------------------------------------------------------
+
+Subject to the terms of this Agreement, Andrew Lindsay,
+WA0MCS ("Licensor") grants you ("Licensee") a non-exclusive,
+non-transferable, perpetual license to install and operate
+one (1) instance of the Fox Pursuit Web Application ("Software")
+on a single web domain registered to you or your organization.
+
+This license is valid for the lifetime of the product and
+does not require annual renewal. Once purchased, you may
+use the Software indefinitely.
+
+------------------------------------------------------------
+2. PERMITTED USES
+------------------------------------------------------------
+
+You may:
+
+  a) Install and operate the Software on one (1) web domain.
+
+  b) Use the Software for personal, club, or organizational
+     amateur radio direction finding (fox hunt) activities.
+
+  c) Modify the HTML, CSS, and JavaScript source files solely
+     for the purpose of customizing the appearance and content
+     of YOUR OWN installation. Modified versions remain
+     subject to all terms of this Agreement.
+
+  d) Allow members of your organization to access and use
+     your installation of the Software at no charge to them.
+
+  e) Receive updates to the Software if and when made
+     available by the Licensor.
+
+------------------------------------------------------------
+3. RESTRICTIONS
+------------------------------------------------------------
+
+You may NOT:
+
+  a) Sell, resell, sublicense, rent, lease, lend, or
+     otherwise transfer the Software or your license rights
+     to any third party.
+
+  b) Distribute the Software files, in original or modified
+     form, to any person or organization, whether for free
+     or for compensation.
+
+  c) Remove, alter, or obscure any copyright notices,
+     license notices, attribution text, or branding within
+     the Software, including but not limited to references
+     to "Andrew Lindsay, WA0MCS."
+
+  d) Use the Software on more than one (1) domain without
+     purchasing an additional license for each domain.
+
+  e) Attempt to bypass, disable, or circumvent the license
+     validation system.
+
+  f) Share, publish, or otherwise make available your
+     license key to any third party.
+
+  g) Use the Software in any manner that violates applicable
+     law, FCC regulations, or amateur radio guidelines.
+
+------------------------------------------------------------
+4. ATTRIBUTION
+------------------------------------------------------------
+
+All public-facing pages of your installation must retain
+the following attribution in the footer area:
+
+  "© [Year] Andrew Lindsay, WA0MCS"
+  with a hyperlink to https://www.qrz.com/db/WA0MCS
+
+Removing or obscuring this attribution constitutes a
+material breach of this Agreement.
+
+------------------------------------------------------------
+5. DOMAIN LOCK
+------------------------------------------------------------
+
+Your license key is registered to the domain you specify
+at activation. The Software will only operate on that
+registered domain.
+
+If you need to move your installation to a new domain
+(e.g., you changed web hosts or domain names), contact
+the Licensor to transfer your license at no charge.
+
+------------------------------------------------------------
+6. TERMINATION
+------------------------------------------------------------
+
+This license terminates automatically if you breach any
+term of this Agreement. Upon termination you must cease
+all use of the Software and delete all copies.
+
+The Licensor reserves the right to revoke your license
+key for material breach, including but not limited to:
+
+  - Detected use on unauthorized domains
+  - Distribution of the Software or license key to others
+  - Fraudulent purchase (chargebacks)
+
+------------------------------------------------------------
+7. OWNERSHIP
+------------------------------------------------------------
+
+The Software, including all code, design, and associated
+documentation, remains the exclusive intellectual property
+of Andrew Lindsay, WA0MCS. This Agreement grants you a
+limited license to use the Software; it does not transfer
+any ownership rights to you.
+
+------------------------------------------------------------
+8. DISCLAIMER OF WARRANTIES
+------------------------------------------------------------
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, OR NON-INFRINGEMENT.
+
+THE LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL BE
+ERROR-FREE, UNINTERRUPTED, OR FREE OF SECURITY
+VULNERABILITIES. USE OF THE SOFTWARE IS AT YOUR OWN RISK.
+
+------------------------------------------------------------
+9. LIMITATION OF LIABILITY
+------------------------------------------------------------
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY INDIRECT,
+INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES
+ARISING OUT OF OR RELATED TO YOUR USE OF THE SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+THE LICENSOR'S TOTAL LIABILITY UNDER THIS AGREEMENT SHALL
+NOT EXCEED THE AMOUNT PAID BY YOU FOR THE LICENSE.
+
+------------------------------------------------------------
+10. GOVERNING LAW
+------------------------------------------------------------
+
+This Agreement shall be governed by the laws of the State
+of Missouri, United States. Any disputes shall be resolved
+in the courts of Taney County, Missouri.
+
+------------------------------------------------------------
+11. CONTACT
+------------------------------------------------------------
+
+For licensing questions, domain transfers, or support:
+
+  Andrew Lindsay, WA0MCS
+  https://www.qrz.com/db/WA0MCS
+  https://timeoutside.net/foxhunt
+
+============================================================
+  Copyright © 2026 Andrew Lindsay, WA0MCS
+  All Rights Reserved
+============================================================
+
+12. MAP DATA
+
+   This license governs the Fox Pursuit software, its code, and its distribution
+   package. It does not govern the map data. The map tiles distributed with, or
+   downloaded or streamed for use by, Fox Pursuit (the ".pmtiles" archives) are
+   (c) OpenStreetMap contributors and are licensed under the Open Database License
+   (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Your rights to
+   use, host, and redistribute that map data are governed by ODbL and not by this
+   license; nothing in this license limits, or is intended to limit, any right
+   ODbL grants you in the map data. You must preserve the OpenStreetMap
+   attribution as described in the ATTRIBUTION.txt file that accompanies each map.

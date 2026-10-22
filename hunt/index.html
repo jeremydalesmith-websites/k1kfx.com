@@ -1,19 +1,319 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>K1KFX · Hunt</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Sign In</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="foxhunt.css"/>
+  <script src="0-config-foxhunt.js"></script>
+  <script src="foxhunt-theme.js"></script>
   <style>
-    body { background:#0f1412; color:#f2efe6; font-family: ui-monospace, monospace; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:0 16px; text-align:center; }
-    a { color:#ff6a1a; }
+    body{display:flex;flex-direction:column;align-items:center;justify-content:center;
+         min-height:100vh;padding:1rem;}
+    body::before{animation:gridPan 30s linear infinite;}
+    @keyframes gridPan{from{background-position:0 0}to{background-position:40px 40px}}
+    body::after{content:'';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:600px;height:600px;
+      background:radial-gradient(circle,rgba(var(--accent-rgb),0.07) 0%,transparent 70%);
+      pointer-events:none;}
+    .auth-card{
+      background:var(--panel);border:1px solid var(--border);border-radius:4px;
+      width:100%;max-width:420px;padding:2.5rem 2rem;
+      position:relative;z-index:1;box-shadow:0 0 60px rgba(0,0,0,0.6);
+    }
+    .logo{text-align:center;margin-bottom:1.8rem;}
+    .logo .fox{font-size:3rem;display:block;margin-bottom:0.4rem;
+      filter:drop-shadow(0 0 12px var(--accent));}
+    .logo h1{font-family:var(--mono);font-size:1.3rem;letter-spacing:0.15em;color:var(--accent);}
+    .logo p{font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;
+      text-transform:uppercase;margin-top:0.2rem;}
+    .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem;}
+    .tab-btn{
+      flex:1;background:none;border:none;padding:0.6rem;
+      font-family:var(--mono);font-size:0.75rem;letter-spacing:0.08em;
+      color:var(--muted);cursor:pointer;transition:color 0.2s;
+      border-bottom:2px solid transparent;margin-bottom:-1px;
+    }
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+    .form-section{display:none;}
+    .form-section.active{display:block;}
+    .divider{border:none;border-top:1px solid var(--border);margin:1.2rem 0;}
+    /* iPhone first-visit banner (v72.6). Shown only on an iPhone/iPad that is
+       NOT running from a home-screen icon, until dismissed or followed. */
+    #ios-first{
+      display:none;position:relative;z-index:1;width:100%;max-width:420px;
+      margin:0 0 0.9rem;padding:0.75rem 0.9rem;
+      background:var(--panel);border:2px solid var(--accent);border-radius:4px;
+      font-family:var(--mono);font-size:0.78rem;line-height:1.5;color:var(--text);
+    }
+    #ios-first a{color:var(--accent);font-weight:bold;}
+    /* v2026.21t / v2026.10s (C54): a slow glow, about every 2 s, for as long as the
+       banner shows - it goes when the banner is dismissed or its link is followed.
+       With Reduce Motion on, a steady highlight instead of the glow. */
+    #ios-first{animation:ios-first-pulse 2s ease-in-out infinite;}
+    @keyframes ios-first-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(var(--accent-rgb),0);}
+      50%    {box-shadow:0 0 0 6px rgba(var(--accent-rgb),0.35);}
+    }
+    @media (prefers-reduced-motion:reduce){
+      #ios-first{animation:none;box-shadow:0 0 0 4px rgba(var(--accent-rgb),0.25);}
+    }
+    /* iPhone sign-in interstitial (v72.7): shown INSTEAD of signing in, once,
+       when an iPhone/iPad user in a browser taps Enter without having opened
+       the set-up steps. The banner above is passive; this is the trap. */
+    #ios-gate{display:none;padding:0.2rem 0 0.4rem;}
+    #ios-gate h2{font-family:var(--mono);color:var(--accent);font-size:1rem;letter-spacing:0.05em;margin:0 0 0.6rem;}
+    #ios-gate p{font-size:0.9rem;line-height:1.6;margin:0 0 0.9rem;}
+    #ios-gate .btn{margin-top:0.5rem;}
+    #ios-gate .btn.secondary{background:none;border:1px solid var(--border);color:var(--muted);}
+    #ios-first button{
+      float:right;background:none;border:none;color:var(--muted);
+      font-family:var(--mono);font-size:1rem;cursor:pointer;padding:0 0 0 0.6rem;line-height:1;
+    }
+    .no-pw-note{
+      background:rgba(var(--accent-rgb),0.06);border:1px solid rgba(var(--accent-rgb),0.2);
+      border-radius:4px;padding:0.8rem 1rem;margin-bottom:1rem;
+      font-size:0.8rem;color:var(--muted);line-height:1.5;
+    }
   </style>
 </head>
-<body>
-  <div>
-    <h1>Hunt coming soon</h1>
-    <p>Placeholder — replace this folder with the FoxPursuit team files.</p>
-    <p><a href="../">← Back</a></p>
+<body class="grid-bg">
+
+<div id="ios-first" role="note">
+  <button type="button" id="ios-first-x" aria-label="Dismiss">&#x2715;</button>
+  <strong>iPhone or iPad?</strong> Read the short set-up steps first &mdash; done in order,
+  the app works first time; skipped, the buttons look fine and do nothing.
+  <a href="getting-started.html#iphone" id="ios-first-link">Open the iPhone steps &rarr;</a>
+</div>
+
+<div class="auth-card">
+  <div class="logo">
+    <img src="favicon.svg" class="fox" alt="Fox Pursuit" style="width:3.2rem;height:auto;margin:0 auto 0.4rem"/>
+    <h1 id="hero-brand">FOX PURSUIT</h1>
+    <p>Ham Radio Direction Finding</p>
   </div>
+
+  <!-- Passwordless entry, rendered by buildNoPwUI() -->
+  <div id="auth-container"></div>
+</div>
+
+<nav id="help-links" style="position:relative;z-index:1;margin-top:1.4rem;
+  font-family:var(--mono);font-size:0.7rem;text-align:center;line-height:2;max-width:420px;">
+  <a href="getting-started.html">Getting Started</a> ·
+  <a href="instructions.html">Instructions</a> ·
+  <a href="troubleshooting.html">Troubleshooting</a><br>
+  <a href="about.html">About</a> ·
+  <a href="contact.html">Contact</a> ·
+  <a href="purchase.html">Purchase</a>
+</nav>
+
+<footer style="position:relative;z-index:1;margin-top:0.9rem;
+  font-family:var(--mono);font-size:0.68rem;color:var(--muted);text-align:center;">
+  © 2026 Andrew Lindsay,
+  <a href="https://www.qrz.com/db/WA0MCS" target="_blank" style="color:var(--accent)">WA0MCS</a>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="0-config-firebase.js"></script>
+<script src="foxhunt.js"></script>
+<script>
+  // iPhone first-visit banner (v72.6). iOS grants location and compass once per
+  // page and never re-asks; a first-timer who taps Don't Allow gets an app that
+  // looks fine and cannot submit. So on an iPhone/iPad in a browser (not yet
+  // installed to the home screen - navigator.standalone is iOS's own flag for
+  // that) point at the ordered steps until they have been opened or dismissed.
+  (function () {
+    try {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const installed = navigator.standalone === true;
+      const seen = localStorage.getItem('fh_ios_steps_seen') === '1';
+      if (!isIOS || installed || seen) return;
+      const el = document.getElementById('ios-first');
+      el.style.display = 'block';
+      const done = () => { try { localStorage.setItem('fh_ios_steps_seen', '1'); } catch (e) {} el.style.display = 'none'; };
+      document.getElementById('ios-first-x').addEventListener('click', done);
+      document.getElementById('ios-first-link').addEventListener('click', () => { try { localStorage.setItem('fh_ios_steps_seen', '1'); } catch (e) {} });
+    } catch (e) {}
+  })();
+</script>
+<script>
+
+// ── Redirect if already signed in (with a handle) ──────────
+auth.onAuthStateChanged(async user => {
+  if (!user || !user.isAnonymous) return;
+  let hasHandle = false;
+  try {
+    if (FOXHUNT_CONFIG.persistUsernames === false) {
+      hasHandle = !!localStorage.getItem('fh_handle');
+    } else {
+      const snap = await db.collection('users').doc(user.uid).get({ source: fhSource() });
+      hasHandle = snap.exists && !!snap.data().username;
+    }
+  } catch (e) {}
+  if (hasHandle) window.location.href = 'home.html';
+});
+
+// ── Build UI (passwordless only) ───────────────────────────
+document.addEventListener('DOMContentLoaded', () => { applyHomeHero(); buildNoPwUI(); });   // v2026.9 (B15): brand from config
+
+
+function setMsg(id, text, type) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = text; el.className = 'msg ' + type; }
+}
+
+// As setMsg, but the text is trusted markup. Used ONLY for the fixed
+// setup-error strings below, never for anything a user typed.
+function setMsgHTML(id, html, type) {
+  const el = document.getElementById(id);
+  if (el) { el.innerHTML = html; el.className = 'msg ' + type; }
+}
+
+// Turn a raw Firebase auth error into something the person reading it can act
+// on. The three codes handled here are the ones a MISCONFIGURED SITE produces,
+// and every one of them used to surface as unexplained SDK text on the sign-in
+// screen — the one page with no way to reach the help that explains it.
+function authErrorHTML(e) {
+  const code = (e && e.code ? String(e.code) : '').toLowerCase();
+  const help = '<br><a href="troubleshooting.html" style="color:var(--accent)">'
+             + 'Open Troubleshooting</a> for the fix.';
+  if (code.indexOf('api-key-not-valid') >= 0 || code.indexOf('invalid-api-key') >= 0) {
+    return 'This site is not finished setting up. Its Firebase configuration is '
+         + 'still incomplete, so no one can sign in yet.<br>'
+         + '<span style="color:var(--muted)">Site owner: check that '
+         + '0-config-firebase.js on the server holds your real project values, '
+         + 'not the placeholders.</span>' + help;
+  }
+  // Firebase reports a DISABLED sign-in provider differently depending on which
+  // one it is: Email/Password gives operation-not-allowed, Anonymous gives
+  // admin-restricted-operation. v71.1 mapped only the first, so a buyer who had
+  // not enabled Anonymous — the likelier omission — still saw raw SDK text.
+  if (code.indexOf('operation-not-allowed') >= 0 ||
+      code.indexOf('admin-restricted-operation') >= 0 ||
+      code.indexOf('configuration-not-found') >= 0) {
+    return 'This site is not finished setting up. The required sign-in methods '
+         + 'are not switched on in its Firebase project.<br>'
+         + '<span style="color:var(--muted)">Site owner: enable BOTH Anonymous '
+         + 'and Email/Password under Authentication - Sign-in method.</span>' + help;
+  }
+  if (code.indexOf('network-request-failed') >= 0) {
+    return 'Could not reach the network to sign in. Check your connection and '
+         + 'try again.';
+  }
+  return null;   // anything else keeps the SDK's own wording
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  NO-PASSWORD MODE
+// ════════════════════════════════════════════════════════════
+function buildNoPwUI() {
+  document.getElementById('auth-container').innerHTML = `
+    <div class="no-pw-note">
+      No password required. Enter your callsign or handle to continue.
+      Your username only needs to be unique within an active hunt.
+    </div>
+    <label class="field-label">Username / Callsign</label>
+    <input id="np-user" type="text" autocomplete="username" placeholder="E.G. WA0MCS"
+           oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" maxlength="20"/>
+    <button class="btn primary full" id="np-btn" onclick="doNoPwEnter()" style="margin-top:1.2rem">Enter →</button>
+    <div class="msg" id="np-msg"></div>
+    <div id="ios-gate">
+      <h2>Before you start on an iPhone</h2>
+      <p>iOS asks for your location and compass once, and won't ask again if a prompt is missed &mdash;
+         the app then looks fine and the Submit buttons do nothing. The set-up steps take two minutes
+         and only need doing once.</p>
+      <a class="btn primary full" href="getting-started.html#iphone" id="ios-gate-go">Show me the steps &rarr;</a>
+      <button type="button" class="btn secondary full" id="ios-gate-skip">I've already done this</button>
+    </div>`;
+
+  document.getElementById('np-user').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doNoPwEnter();
+  });
+}
+
+// iOS-in-browser first-time gate (v72.7). Returns true if the gate was shown
+// and sign-in should stop here. Never fires from a home-screen icon
+// (navigator.standalone) or once the steps have been opened or acknowledged.
+function iosGate() {
+  try {
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!isIOS || navigator.standalone === true) return false;
+    if (localStorage.getItem('fh_ios_steps_seen') === '1') return false;
+    const gate = document.getElementById('ios-gate');
+    if (!gate || gate.style.display === 'block') return false;
+    gate.style.display = 'block';
+    const mark = () => { try { localStorage.setItem('fh_ios_steps_seen', '1'); } catch (e) {} };
+    document.getElementById('ios-gate-go').addEventListener('click', mark);
+    document.getElementById('ios-gate-skip').addEventListener('click', () => {
+      mark(); gate.style.display = 'none';
+      const b = document.getElementById('ios-first'); if (b) b.style.display = 'none';
+      doNoPwEnter();
+    });
+    return true;
+  } catch (e) { return false; }
+}
+
+async function doNoPwEnter() {
+  const username = document.getElementById('np-user').value.trim().toUpperCase();
+  if (!username) { setMsg('np-msg','Enter a username','error'); return; }
+  if (iosGate()) return;
+  if (!/^[A-Z0-9_\-]+$/.test(username)) {
+    setMsg('np-msg','Letters, numbers, _ and - only','error'); return; }
+  const blocked = await isUsernameBlocked(username);
+  if (blocked) { setMsg('np-msg','That username is not allowed','error'); return; }
+
+  const btn = document.getElementById('np-btn');
+  btn.disabled = true;
+  setMsg('np-msg','Signing in…','');
+  // v72.13: ask iOS to keep this icon's storage, while we still have the tap.
+  if (typeof fhRequestPersist === 'function') { try { await fhRequestPersist(); } catch (e) {} }
+
+  try {
+    // Use anonymous auth — silent, no credentials needed
+    let user = auth.currentUser;
+    if (!user || !user.isAnonymous) {
+      // A brand-new anonymous session cannot be minted without a network.
+      if (!navigator.onLine) {
+        setMsg('np-msg','You are offline. Connect once to sign in — after that the '
+                      + 'app keeps working offline.','error');
+        btn.disabled = false; return;
+      }
+      const cred = await auth.signInAnonymously();
+      user = cred.user;
+    }
+    // Store the handle. In no-persist mode keep it only on this device (local
+    // storage) — nothing about the handle is written to the server. Otherwise store
+    // it in Firestore so every page can read it.
+    if (typeof FOXHUNT_CONFIG !== 'undefined' && FOXHUNT_CONFIG.persistUsernames === false) {
+      try { localStorage.setItem('fh_handle', username); } catch (e) {}
+    } else {
+      // Not awaited on purpose: with offline persistence the local write lands
+      // immediately and syncs later, but this promise only settles on server ack —
+      // awaiting it hangs forever while offline.
+      db.collection('users').doc(user.uid).set({ username }).catch(() => {});
+    }
+    // Always keep a local copy so requireAuth() can recover the handle offline.
+    try { localStorage.setItem('fh_handle', username); } catch (e) {}
+    window.location.href = 'home.html';
+  } catch(e) {
+    const friendly = authErrorHTML(e);
+    if (friendly) setMsgHTML('np-msg', friendly, 'error');
+    else          setMsg('np-msg', e.message, 'error');
+    btn.disabled = false;
+  }
+}
+</script>
 </body>
 </html>

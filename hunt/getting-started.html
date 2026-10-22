@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <title>Fox Pursuit — Getting Started</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="foxhunt.css"/>
+  <script src="0-config-foxhunt.js"></script>
+  <script src="foxhunt-theme.js"></script>
+  <style>
+    .gs-method {
+      border-left: 3px solid var(--accent);
+      background: var(--panel);
+      padding: 0.9rem 1.2rem;
+      border-radius: 0 4px 4px 0;
+      margin-bottom: 1rem;
+    }
+    .gs-method h3 {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 0.92rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+    .gs-method p { margin: 0; font-size: 0.9rem; line-height: 1.7; }
+    .gs-x { color: #e03030; font-weight: bold; }
+    .gs-c { color: var(--text); font-weight: bold; }
+    .lead {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 1.4rem;
+    }
+    /* iPhone set-up box (v72.5; collapsible v72.6). It sits above everything
+       else on the page because skipping a step here leaves an iPhone that looks
+       fine but cannot submit a bearing. Open on iOS, collapsed elsewhere. */
+    .gs-ios {
+      border: 2px solid var(--accent);
+      background: var(--panel);
+      border-radius: 4px;
+      padding: 1rem 1.2rem 0.6rem;
+      margin: 0 0 1.6rem;
+    }
+    .gs-ios summary { cursor: pointer; list-style: none; }
+    .gs-ios summary::-webkit-details-marker { display: none; }
+    .gs-ios summary h2 { display: inline; }
+    .gs-ios summary h2::before { content: "\25B8  "; }
+    .gs-ios[open] summary h2::before { content: "\25BE  "; }
+    .gs-ios[open] summary { margin-bottom: 0.5rem; }
+    /* The collapsed-state line is the control, so it is styled like a link,
+       not a caption (DOC-16 partial, v72.7). */
+    .gs-ios-hint { display: block; font-family: var(--sans); font-size: 0.92rem; color: var(--accent); text-decoration: underline; margin-top: 0.3rem; }
+    .gs-ios[open] .gs-ios-hint { display: none; }
+    .gs-ios h2 {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 1.05rem;
+      letter-spacing: 0.06em;
+      margin: 0;
+    }
+    .gs-ios p, .gs-ios li { font-size: 0.9rem; line-height: 1.7; }
+    .gs-ios p { margin: 0 0 0.7rem; }
+    .gs-ios ol { margin: 0 0 0.8rem 1.2rem; padding: 0; }
+    .gs-ios li { margin-bottom: 0.45rem; }
+    .gs-ios h3 {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      margin: 0.9rem 0 0.35rem;
+    }
+    .gs-ios .gs-path { font-family: var(--mono); font-size: 0.82rem; }
+    /* Print (v72.9). Clubs hand these pages around on paper: plain black on
+       white, no chrome, and the iPhone box expanded (see the beforeprint hook). */
+    .print-link { margin: -0.6rem 0 1.4rem; }
+    .print-link button {
+      background: none; border: 1px solid var(--border); border-radius: 3px;
+      color: var(--accent); font-family: var(--mono); font-size: 0.78rem;
+      letter-spacing: 0.05em; padding: 0.35rem 0.8rem; cursor: pointer;
+    }
+    @media print {
+      * { background: transparent !important; color: #000 !important;
+          box-shadow: none !important; text-shadow: none !important; }
+      body, body.grid-bg { background: #fff !important; }
+      nav, footer, .print-link { display: none !important; }
+      .page-wrap { max-width: none; padding: 0; }
+      a { text-decoration: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; }
+      h1, h2, h3 { page-break-after: avoid; }
+      p, li { orphans: 3; widows: 3; }
+      .print-only { display: block !important; }
+    }
+    /* v72.10: a version line that appears only on paper, so a printout can be
+       told from a newer one. Hidden on screen. */
+    .print-only { display: none; font-family: var(--mono); font-size: 0.78rem;
+                  margin-top: 1.6rem; }
+  </style>
+</head>
+<body class="grid-bg">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="0-config-firebase.js"></script>
+<script src="foxhunt.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    insertNav(true); insertFooter();
+    { const el = document.getElementById('print-build-line');
+      if (el && typeof FH_BUILD !== 'undefined') el.textContent = 'Current as of Fox Pursuit ' + FH_BUILD; }
+    fhOptionalAuth();
+    renderContentBlocks('gettingStarted-content', (typeof FOXHUNT_CONFIG !== 'undefined' ? FOXHUNT_CONFIG.gettingStarted : []));
+    // FP12 (C30): optional content at the top of the page.
+    try {
+      var topEl = document.getElementById('gettingStartedTop-content');
+      renderContentBlocks('gettingStartedTop-content', (typeof FOXHUNT_CONFIG !== 'undefined' && Array.isArray(FOXHUNT_CONFIG.gettingStartedTop)) ? FOXHUNT_CONFIG.gettingStartedTop : []);
+      if (topEl && topEl.innerHTML.trim()) topEl.style.display = 'block';
+    } catch (e) {}
+    try {
+      var c = (typeof FOXHUNT_CONFIG !== 'undefined') ? FOXHUNT_CONFIG : {};
+      var metric = (c.units === 'metric');
+      document.querySelectorAll('.gs-acc-ex').forEach(function (e) { e.textContent = metric ? '±15 meters' : '±50 feet'; });
+      // Handle-storage privacy sentence, driven by config.
+      var hnote = document.getElementById('gs-handle-note');
+      if (hnote) {
+        if (c.persistUsernames === false) {
+          hnote.textContent = 'Your chosen handle is kept only on your own device \u2014 it is never stored on this site\u2019s servers. Clear your browser or switch devices and you simply enter it again.';
+        } else {
+          hnote.textContent = 'Your chosen handle is saved so it\u2019s there when you return on the same device; it is never used to identify you beyond the hunt.';
+        }
+      }
+    } catch (e) {}
+  });
+</script>
+
+<div class="page-wrap">
+  <h1 class="page-title">Getting Started</h1>
+  <p class="page-subtitle">Essential reading — the basics and the features you'll use most</p>
+  <!-- FP12 (C30): host content at the TOP of the page - the "gettingStartedTop" blocks in
+       0-config-foxhunt.js (same format as the blocks at the bottom). Hidden when
+       the key is missing or every block is empty. -->
+  <div id="gettingStartedTop-content" style="display:none;background:rgba(var(--accent-rgb),0.06);border:1px solid rgba(var(--accent-rgb),0.2);border-radius:4px;padding:1.2rem 1.4rem;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.75;"></div>
+  <div class="print-link"><button type="button" onclick="window.print()">&#9113; Print this page</button></div>
+
+  <details class="gs-ios" id="iphone">
+    <summary><h2>iPhone and iPad users &mdash; do these steps, in this order</h2><span class="gs-ios-hint">Tap to show the iPhone steps</span></summary>
+    <p>iOS asks for your location <strong>every time a hunt page opens</strong>, and for the compass <strong>once</strong>. If you tap <strong>Don't Allow</strong> or let a prompt slide past, the app will look normal but the Submit buttons will <strong>not</strong> work. Following the steps below will allow the application to work properly. You only need to perform these steps once.</p>
+    <p><strong>IMPORTANT:</strong> The first step, below, instructs you on adding this application as an app icon on your home screen. Read step 1 all the way through before you start; you'll leave this page to perform the operations. After you tap Add at the end of Step&#8209;1, iOS takes you to the home screen. Open Fox Pursuit from the new icon and carry on from step 2. To see these steps again, open Getting Started from the app's menu. Do not skip any of the six steps.</p>
+    <ol>
+      <li><strong>You have opened this site in Safari or a compatible browser.</strong> The icon has to be added from the start page, not this one; an icon added here would open on these instructions every time. On the start page: (a) tap the More button (three dots); (b) tap Share; (c) tap View More (scroll the sheet if needed); (d) tap <strong>Add to Home Screen</strong>; leave "Open as Web App" switched on if you see it; (e) rename the icon if you wish; (f) tap <strong>Add</strong>. Now <a href="index.html" style="font-weight:bold">tap here to go to the start page</a> and do (a) to (f).</li>
+      <li><strong>From now on, open Fox Pursuit from the new home screen icon, not from Safari.</strong> The icon keeps its own storage, so maps downloaded in Safari aren't in the icon. Once you've signed in (step 3), the offline-ready line on the Dashboard should end "Storage protected." If it says "Storage NOT protected," iOS may clear the app's data, including your sign-in, after about a week unused, in which case while online open it at least once a week and the day before a hunt.</li>
+      <li><strong>Sign in, then tap Create or Join a Hunt</strong> and create a hunt with any name.</li>
+      <li>When iOS asks to use your location, tap <strong>Allow</strong>.</li>
+      <li>Tap <strong>Enable Compass</strong> in the box at the top of the control panel, then <strong>Allow</strong> when iOS asks for Motion &amp; Orientation access. The box and the panel close, and the lines at the bottom-left of the map show your GPS accuracy (green) and a compass heading.</li>
+      <li><strong>While you are still online, download your map for offline use.</strong> Scroll to the bottom of the control panel and tap <strong>Download / View Offline Maps</strong>. If an <strong>Entire map</strong> button is shown, that's the simplest choice. Otherwise, or if space is tight, tap the map to pick a centre and download an area around it. When it finishes, tap <strong>Close</strong>. Do these steps now. Afterwards you can hunt anywhere in the downloaded area with no signal. Don't wait until hunt time, when you may be offline.</li>
+    </ol>
+    <p>iOS asks about location again each time a hunt page loads &mdash; a new hunt, or reopening the app. Tap <strong>Allow</strong> each time; it is the same permission, not a new one.</p>
+    <p><strong>Holding the phone sideways:</strong> if you turn the phone to landscape while it is lying flat, iOS may leave the page un-rotated, and the bearing then reads 90&deg; off. Lift the phone briefly so the page turns with it, then lay it flat again.</p>
+    <p><strong>Other iPhone browsers</strong> (Chrome, Firefox, Edge) work the same way, since every browser on iOS is Safari underneath; only the menu wording differs.</p>
+
+    <h3>If a button stays dimmed, or the app opens to a Safari error</h3>
+    <p>Occasionally iOS leaves a home-screen app with a dead connection, or fails to open it at all ("Safari can't open the page"). If a button stays dimmed for more than ten seconds, or the app opens to an error, open the app switcher and <strong>close every Fox Pursuit window you find there</strong> &mdash; there may be more than one &mdash; then open the app again from the icon. Nothing is lost: your sign-in, offline maps and any queued readings are kept.</p>
+
+    <h3>If you tapped Don't Allow for location</h3>
+    <p>The GPS line reads "GPS permission denied". iOS will not ask again by itself. To get the prompt back:</p>
+    <ol>
+      <li>Open the iPhone's <span class="gs-path">Settings &rsaquo; Privacy &amp; Security &rsaquo; Location Services &rsaquo; Safari Websites</span>.</li>
+      <li>Tap <strong>Ask Next Time Or When I Share</strong> &mdash; tap it even if it already shows a tick &mdash; then back out of Settings.</li>
+      <li>Back in Fox Pursuit tap <strong>Home</strong>, then open the hunt again. The location prompt returns; tap <strong>Allow</strong>.</li>
+    </ol>
+    <p>This works whether you opened the app from the icon or in Safari. If it does not, delete the icon from the home screen, add it again from Safari, and tap Allow this time &mdash; deleting the icon also deletes its offline maps, so you will need to download your area again. Until then you can still hunt: tap the map to place your location and enter the bearing by hand.</p>
+    <p>If you tapped Deny for the <em>compass</em>, see the Troubleshooting page.</p>
+  </details>
+
+  <script>
+    // Open the iPhone box on an iPhone or iPad; collapse it everywhere else so
+    // Android and desktop readers (and printers) still find it at the top of the
+    // page but are not made to read it. <details> works without this script.
+    (function () {
+      var ua = navigator.userAgent || '';
+      var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var box = document.getElementById('iphone');
+      if (box) box.open = ios || location.hash === '#iphone';
+    })();
+  </script>
+
+  <h2 class="section-heading">What is a fox hunt?</h2>
+  <p>A ham radio fox hunt — also called <strong>ARDF</strong>, Amateur Radio Direction Finding — is an activity where participants use radio receivers and directional antennas to locate a hidden transmitter called "the fox." This app helps everyone share their GPS location and the compass bearing toward the signal, so the group can triangulate the fox's position on one shared map in real time.</p>
+
+  <h2 class="section-heading">Getting your location</h2>
+  <p>When you open a hunt, the app starts your GPS automatically and keeps your position updated as you move. You'll need to allow location access if your device asks. If location access is denied, or your device has no GPS, you'll enter your location and bearing manually instead.</p>
+  <p>On a phone the GPS status line shows at the bottom-left of the map. In the control panel it sits under the "GPS Location" heading, just above the Latitude and Longitude fields (on a phone, tap "Show advanced" to see them). It first shows "Requesting GPS…"; once the device locks onto your position it turns green and shows how tight the estimate is — for example, "GPS Accuracy: <span class="gs-acc-ex">±50 feet</span>." Your latitude and longitude fill in by themselves, and you can tap either field to type or adjust a value by hand. (Accuracy improves outdoors with a clear view of the sky.)</p>
+
+  <h2 class="section-heading">Three ways to submit a location and bearing</h2>
+
+  <div class="gs-method">
+    <h3>1 · Stand and point</h3>
+    <p>Hold the device flat and point the top — or a side, if you're holding the phone in landscape orientation — directly at the strongest signal. Keep still a moment so the reading settles, then press Submit → on the map (Submit Location + Bearing in the panel). While you're stationary the app uses the magnetic compass for the bearing. (On iPhone, the compass needs a one-time tap: the app opens the control panel for you and shows a <strong>Compass permission needed</strong> box at the top of it &mdash; tap <strong>Enable Compass</strong> there and choose Allow. If the panel is closed, tap <strong>Show Controls</strong> first. If you tap Deny, iOS will not ask again on this site; see the Troubleshooting page to allow it, or enter bearings by hand.)</p>
+  </div>
+
+  <div class="gs-method">
+    <h3>2 · Walk toward the signal</h3>
+    <p>Where there's open space, hold the device flat and walk in a straight line directly toward the signal — at least 20 feet, and the farther the better (about 60–90 feet gives the cleanest result). As you walk, the status line under Compass Bearing shows which source is in use: it holds the compass (the way you're facing) until the GPS heading is solid, then snaps to the GPS heading (the way you walked). Stop, and within about 5 seconds press Submit → on the map (Submit Location + Bearing in the panel) — the GPS heading is held that long so you can submit, then it reverts to the compass on its own. This is especially useful when something is disturbing your compass — most often in or near a vehicle.</p>
+    <p><strong>On iPhone:</strong> Apple's iOS reports your speed and position to web pages more slowly than Android does, so at a normal walking pace an iPhone won't gather a usable GPS heading before you've gone too far — this is a limitation of iOS, not the app. The feature still works on iPhone at a jog or faster, and it's genuinely useful at driving speeds, which is exactly when you'd want it (a vehicle throws off the compass). At walking speed on an iPhone, rely on the compass — after checking that it's accurate — or enter the bearing by hand.</p>
+  </div>
+
+  <div class="gs-method">
+    <h3>3 · Enter it yourself</h3>
+    <p>You can always override the sensors. To place a reading on the map, tap "Manual Entry" on the map (phones), or "Add Manual Location &amp; Bearing to Map" in the panel's advanced items. Your current location is marked with a red <span class="gs-x">✕</span> — tap the <span class="gs-x">✕</span> to use it, or tap anywhere else on the map to set a different spot — then tap the direction of the signal (tracking pauses and resumes on its own). To type exact values instead, tap "Stop Tracking" so GPS won't overwrite your entries, open the advanced items (Show advanced), enter the latitude, longitude, and bearing, then submit — and tap Stop Tracking again to resume. Use manual entry when you already know the bearing, when the device has no compass or a clearly-wrong one and you can't walk far enough for a GPS bearing, or when you're plotting coordinates a teammate radioed in.</p>
+  </div>
+
+  <h2 class="section-heading">Finding the fox on the map</h2>
+  <p>Every reading draws a colored line from that person's spot in the direction they pointed, and where the lines cross is the fox's likely area. The app marks that area for you automatically — it's shown by default, in dark red (you can toggle it under "Show probable area (~95%)" in Map Options). The fox is inside the red outline about 95% of the time, and the darker center is its single most likely spot. The area's size and shape come from how closely your bearings agree and from the expected accuracy of each one — a compass reading, a GPS heading, a typed bearing and a map-tapped bearing are each weighted differently.</p>
+  <p>With two bearings on the map, the app marks their crossing point with a small circle of uncertainty around it. With three or more, it draws a dark-red shaded ellipse over where the lines converge, with a <span class="gs-c">⊕</span> at the single best estimate — tap the <span class="gs-c">⊕</span> for a quick summary.</p>
+  <p>Each time you submit a bearing, the map re-centers on the probable area so you can see where to head next; once you move on toward it (about 25 feet), the map goes back to following you.</p>
+  <p>Once at least two bearings cross and a probable area appears, a <strong>Drive to Fox Estimate</strong> button shows on the map on phones, and in the control panel's advanced items. Tap it to open turn-by-turn driving directions toward the estimated location.</p>
+  <p>The app does not weigh every bearing equally. It trusts a GPS or typed-in bearing more tightly than a phone-compass reading, and it automatically sets aside a stray bearing that disagrees with the rest — for instance, one thrown off by a signal bouncing off a building or hillside. Read the ellipse by its size: small and tight means a confident fix, while a large or dashed ellipse means the bearings are nearly parallel or don't agree, so treat it as a rough guide and gather a few more readings from different angles.</p>
+
+  <h2 class="section-heading">What the app records</h2>
+  <p>To understand how the app is used in general, it keeps a few anonymous totals: how many hunts have run, how many people took part, and how many bearings were submitted by compass, by GPS, and by hand. For each finished hunt it also stores the date and a very rough location.</p>
+  <p>This is deliberately kept general. No names, no device details, and no exact positions or times are recorded. A hunt's location is coarsened so it identifies only the general area — the true spot is always somewhere within a 12.5-mile radius, a circle of roughly 491 square miles (1,271 km²). It is meant for understanding overall usage, never for pinpointing anyone or when they were out.</p>
+  <p id="gs-handle-note"></p>
+
+  <!-- Extra host-configurable content from the "gettingStarted" blocks in 0-config-foxhunt.js -->
+  <div id="gettingStarted-content"></div>
+  <p class="print-only" id="print-build-line"></p>
+</div>
+</div>
+<script>
+  // Open the iPhone box (and any other <details>) for printing, whether Print
+  // came from the button or the browser menu, then restore afterwards.
+  (function () {
+    var opened = [];
+    window.addEventListener('beforeprint', function () {
+      opened = [];
+      document.querySelectorAll('details:not([open])').forEach(function (d) { d.open = true; opened.push(d); });
+    });
+    window.addEventListener('afterprint', function () {
+      opened.forEach(function (d) { d.open = false; }); opened = [];
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "Fox Pursuit",
+  "short_name": "Fox Pursuit",
+  "description": "Amateur radio direction finding — your club's fox-hunt site.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d0f14",
+  "theme_color": "#0d0f14",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

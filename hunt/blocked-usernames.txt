@@ -1,0 +1,59 @@
+# Blocked Usernames List
+# One username per line (case-insensitive)
+# Edit this file via cPanel File Manager to add/remove blocked usernames
+# Lines starting with # are comments and are ignored
+# Profane and insulting words that cannot be used as usernames:
+admin
+administrator
+root
+system
+moderator
+mod
+owner
+webmaster
+support
+help
+fuck
+shit
+ass
+asshole
+bitch
+bastard
+cunt
+dick
+prick
+cock
+pussy
+whore
+slut
+nigger
+nigga
+faggot
+fag
+retard
+kike
+spic
+chink
+wetback
+cracker
+nazi
+hitler
+kkk
+rape
+rapist
+pedophile
+pedo
+jerk
+idiot
+moron
+stupid
+dumbass
+jackass
+dipshit
+shithead
+bullshit
+motherfucker
+fucker
+damn
+crap
+hell
