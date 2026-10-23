@@ -121,7 +121,7 @@ const FOXHUNT_CONFIG = {
   backgroundFixed:    false,
 
   // ── HUNT SETTINGS ─────────────────────────────────────────
-  huntDurationHours: 24,   // Hours before a hunt auto-closes
+  huntDurationHours: 4,   // Hours before a hunt auto-closes
   addTimeMinutes:    30,  // Minutes added by the "+30m" button
   bearingLineMiles:  25,  // Length of each bearing line on the map
 
