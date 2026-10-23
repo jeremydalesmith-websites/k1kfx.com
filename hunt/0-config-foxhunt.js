@@ -301,7 +301,7 @@ const FOXHUNT_CONFIG = {
   //   A bare e-mail address in linkUrl becomes a mailto: link; a phone number in
   //   linkUrl becomes a tap-to-dial link.
   contact: [
-    { subheading: "", text: "Find me on QRZ", linkName: "", linkUrl: "https://www.qrz.com/db/K1KFX" },
+    { subheading: "", text: "Find me on QRZ:", linkName: "K1KFX", linkUrl: "https://www.qrz.com/db/K1KFX" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
