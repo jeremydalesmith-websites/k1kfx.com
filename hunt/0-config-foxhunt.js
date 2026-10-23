@@ -244,7 +244,7 @@ const FOXHUNT_CONFIG = {
   //   color     : a hex like "#f0a500", or "" to use the theme default
   //               (tagline defaults to the accent color, subtitle to muted)
   //   bold / smallCaps / underline / italic : true or false
-  homeTagline: "Your Fox Hunting Application",
+  homeTagline: "Team Work Makes The Dream Work",
   homeTaglineStyle:  { size: "", color: "", bold: false, smallCaps: true,  underline: false, italic: false },
 
   homeSubtitle: "Ham Radio Direction Finding",
