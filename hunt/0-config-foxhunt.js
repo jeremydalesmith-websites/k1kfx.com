@@ -301,7 +301,7 @@ const FOXHUNT_CONFIG = {
   //   A bare e-mail address in linkUrl becomes a mailto: link; a phone number in
   //   linkUrl becomes a tap-to-dial link.
   contact: [
-    { subheading: "", text: "REPLACE THIS: how people should get in touch with you.", linkName: "", linkUrl: "" },
+    { subheading: "", text: "Find me on QRZ", linkName: "", linkUrl: "https://www.qrz.com/db/K1KFX" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
@@ -317,9 +317,10 @@ const FOXHUNT_CONFIG = {
   // Works exactly like the Contact blocks above. The "About"
   // heading is fixed; these 10 blocks build the rest of the page.
   about: [
-    { subheading: "", text: "REPLACE THIS: a sentence about your club or group.", linkName: "", linkUrl: "" },
-    { subheading: "", text: "REPLACE THIS: your website, if you have one.", linkName: "", linkUrl: "" },
-    { subheading: "", text: "REPLACE THIS: your social media, if you have one.", linkName: "", linkUrl: "" },
+    { subheading: "About this site", text: "Fox hunting (radio direction finding) for hams in and around Lincoln, Nebraska, hosted by Jeremy Smith, K1KFX.", linkName: "", linkUrl: "" },
+    { subheading: "", text: "Used for local hunts with the", linkName: "K0KKV club", linkUrl: "https://www.qrz.com/db/K0KKV" },
+    { subheading: "", text: "Built on Fox Pursuit by Drew Lindsay, WA0MCS:", linkName: "foxpursuit.com", linkUrl: "https://foxpursuit.com" },
+    { subheading: "", text: "Host:", linkName: "K1KFX on QRZ", linkUrl: "https://www.qrz.com/db/K1KFX" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
     { subheading: "", text: "", linkName: "", linkUrl: "" },
