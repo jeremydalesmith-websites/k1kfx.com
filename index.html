@@ -16,9 +16,10 @@
       --accent: #ff6a1a;
       --accent-ink: #120a05;
       --line: #26302b;
+      --card: #151c19;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
+    html, body { min-height: 100%; }
     body {
       background: var(--bg);
       color: var(--ink);
@@ -28,16 +29,15 @@
       min-height: 100vh;
       padding: 0 16px;
       background-image:
-        radial-gradient(circle at 50% 42%, transparent 0 120px, var(--line) 121px, transparent 122px),
-        radial-gradient(circle at 50% 42%, transparent 0 220px, var(--line) 221px, transparent 222px),
-        radial-gradient(circle at 50% 42%, transparent 0 330px, var(--line) 331px, transparent 332px);
+        radial-gradient(circle at 50% 18%, transparent 0 120px, var(--line) 121px, transparent 122px),
+        radial-gradient(circle at 50% 18%, transparent 0 220px, var(--line) 221px, transparent 222px),
+        radial-gradient(circle at 50% 18%, transparent 0 330px, var(--line) 331px, transparent 332px);
     }
     main {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       text-align: center;
       gap: 28px;
       padding: 48px 0;
@@ -78,6 +78,78 @@
       box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--accent), 0 12px 32px rgba(255,106,26,0.35);
       outline: none;
     }
+
+    /* ── Event board ── */
+    .event {
+      width: 100%;
+      max-width: 560px;
+      border: 2px solid var(--accent);
+      border-radius: 10px;
+      background: var(--card);
+      padding: 24px 20px 20px;
+    }
+    .event-when {
+      font-family: "Archivo Black", sans-serif;
+      font-size: clamp(20px, 5vw, 26px);
+      text-transform: uppercase;
+    }
+    .event-sub {
+      margin-top: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .hunts {
+      list-style: none;
+      margin-top: 20px;
+      display: grid;
+      gap: 12px;
+    }
+    .hunt {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      text-align: left;
+    }
+    .hunt-label {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .hunt-name {
+      font-family: "Archivo Black", sans-serif;
+      font-size: clamp(34px, 10vw, 52px);
+      line-height: 1;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    button.copy {
+      flex-shrink: 0;
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--muted);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      cursor: pointer;
+      min-width: 84px;
+    }
+    button.copy:hover, button.copy:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+    .how {
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--muted);
+      text-align: left;
+    }
+    .how strong { color: var(--ink); }
+
     footer {
       text-align: center;
       font-size: 12px;
@@ -93,10 +165,53 @@
     <div class="tag">Amateur Radio · Lincoln, NE · EN10</div>
     <h1>K1KFX</h1>
     <p class="lede">Radio direction finding in the field. Grab a receiver, find the fox.</p>
+
+    <section class="event" aria-labelledby="event-title">
+      <div class="event-when" id="event-title">Saturday, Oct 24 · 4:00 PM</div>
+      <div class="event-sub">Three foxes, one after another. Join each hunt by name.</div>
+
+      <ul class="hunts">
+        <li class="hunt">
+          <div><div class="hunt-label">Fox 1</div><div class="hunt-name">1024.1</div></div>
+          <button class="copy" data-name="1024.1">Copy</button>
+        </li>
+        <li class="hunt">
+          <div><div class="hunt-label">Fox 2</div><div class="hunt-name">1024.2</div></div>
+          <button class="copy" data-name="1024.2">Copy</button>
+        </li>
+        <li class="hunt">
+          <div><div class="hunt-label">Fox 3</div><div class="hunt-name">1024.3</div></div>
+          <button class="copy" data-name="1024.3">Copy</button>
+        </li>
+      </ul>
+
+      <p class="how">
+        Tap <strong>Join a Hunt</strong>, sign in with your callsign, then enter the hunt name for the current fox.
+        Listen on the repeater for when to switch to the next one.
+      </p>
+    </section>
+
     <a class="join" href="hunt/">Join a Hunt →</a>
   </main>
   <footer>
     K1KFX · <a href="https://www.qrz.com/db/K1KFX">QRZ</a>
   </footer>
+
+  <script>
+    document.querySelectorAll('button.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var name = btn.getAttribute('data-name');
+        var done = function () {
+          btn.textContent = 'Copied ✓';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(name).then(done, function () { btn.textContent = name; });
+        } else {
+          btn.textContent = name;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
