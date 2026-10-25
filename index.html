@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>K1KFX · Fox Hunts</title>
-  <meta name="description" content="K1KFX — amateur radio fox hunts in Lincoln, Nebraska.">
+  <meta name="description" content="K1KFX — amateur radio fox hunts in Lincoln, Nebraska. How to record your bearings with Fox Pursuit.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -19,28 +19,28 @@
       --card: #151c19;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100%; }
     body {
       background: var(--bg);
       color: var(--ink);
       font-family: "IBM Plex Mono", ui-monospace, monospace;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      line-height: 1.6;
       padding: 0 16px;
       background-image:
-        radial-gradient(circle at 50% 18%, transparent 0 120px, var(--line) 121px, transparent 122px),
-        radial-gradient(circle at 50% 18%, transparent 0 220px, var(--line) 221px, transparent 222px),
-        radial-gradient(circle at 50% 18%, transparent 0 330px, var(--line) 331px, transparent 332px);
+        radial-gradient(circle at 50% 210px, transparent 0 120px, var(--line) 121px, transparent 122px),
+        radial-gradient(circle at 50% 210px, transparent 0 220px, var(--line) 221px, transparent 222px),
+        radial-gradient(circle at 50% 210px, transparent 0 330px, var(--line) 331px, transparent 332px);
+      background-repeat: no-repeat;
     }
-    main {
-      flex: 1;
+    .wrap { max-width: 640px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 64px 0 48px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      text-align: center;
-      gap: 28px;
-      padding: 48px 0;
+      gap: 24px;
     }
     .tag {
       font-size: 13px;
@@ -60,95 +60,156 @@
       line-height: 1.55;
       color: var(--muted);
     }
-    a.join {
+
+    /* ── Buttons ── */
+    .btn {
       display: inline-block;
-      background: var(--accent);
-      color: var(--accent-ink);
       font-family: "Archivo Black", sans-serif;
-      font-size: clamp(22px, 5vw, 30px);
       text-transform: uppercase;
       text-decoration: none;
-      padding: 22px 44px;
       border-radius: 6px;
-      box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--accent);
-      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+      text-align: center;
     }
-    a.join:hover, a.join:focus-visible {
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-size: clamp(22px, 5vw, 30px);
+      padding: 22px 44px;
+      box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--accent);
+    }
+    .btn-primary:hover, .btn-primary:focus-visible {
       transform: translateY(-2px);
       box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--accent), 0 12px 32px rgba(255,106,26,0.35);
       outline: none;
     }
-
-    /* ── Event board ── */
-    .event {
-      width: 100%;
-      max-width: 560px;
-      border: 2px solid var(--accent);
-      border-radius: 10px;
-      background: var(--card);
-      padding: 24px 20px 20px;
-    }
-    .event-when {
-      font-family: "Archivo Black", sans-serif;
-      font-size: clamp(20px, 5vw, 26px);
-      text-transform: uppercase;
-    }
-    .event-sub {
-      margin-top: 6px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-    .hunts {
-      list-style: none;
-      margin-top: 20px;
-      display: grid;
-      gap: 12px;
-    }
-    .hunt {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px 16px;
-      text-align: left;
-    }
-    .hunt-label {
-      font-size: 12px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .hunt-name {
-      font-family: "Archivo Black", sans-serif;
-      font-size: clamp(34px, 10vw, 52px);
-      line-height: 1;
-      color: var(--accent);
-      letter-spacing: 0.02em;
-    }
-    button.copy {
-      flex-shrink: 0;
+    .btn-secondary {
       background: transparent;
       color: var(--ink);
-      border: 1px solid var(--muted);
-      border-radius: 6px;
-      font-family: inherit;
-      font-size: 14px;
-      padding: 10px 14px;
-      cursor: pointer;
-      min-width: 84px;
+      border: 2px solid var(--muted);
+      font-size: clamp(18px, 4vw, 22px);
+      padding: 18px 32px;
     }
-    button.copy:hover, button.copy:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
-    .how {
-      margin-top: 18px;
-      font-size: 14px;
-      line-height: 1.6;
+    .btn-secondary:hover, .btn-secondary:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+      outline: none;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-top: 32px;
+    }
+
+    /* ── Sections ── */
+    section {
+      border-top: 1px solid var(--line);
+      padding: 40px 0;
+    }
+    h2 {
+      font-family: "Archivo Black", sans-serif;
+      font-size: clamp(22px, 5vw, 28px);
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      margin-bottom: 16px;
+    }
+    h2 .num { color: var(--accent); margin-right: 10px; }
+    section > p { color: var(--muted); font-size: 16px; }
+
+    ol.steps {
+      list-style: none;
+      counter-reset: step;
+      display: grid;
+      gap: 14px;
+      margin-top: 8px;
+    }
+    ol.steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 14px 16px 14px 60px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    ol.steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 16px;
+      top: 12px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-family: "Archivo Black", sans-serif;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    strong { color: var(--ink); font-weight: 600; }
+
+    .buddy {
+      margin-top: 20px;
+      padding: 16px;
+      border: 2px dashed var(--accent);
+      border-radius: 8px;
+      font-size: 15px;
       color: var(--muted);
-      text-align: left;
     }
-    .how strong { color: var(--ink); }
+    .buddy b {
+      display: block;
+      color: var(--accent);
+      font-family: "Archivo Black", sans-serif;
+      text-transform: uppercase;
+      font-weight: normal;
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+
+    ul.tips { list-style: none; display: grid; gap: 14px; }
+    ul.tips li {
+      padding-left: 22px;
+      position: relative;
+      font-size: 16px;
+      color: var(--muted);
+    }
+    ul.tips li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.6em;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    code {
+      font-family: inherit;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--ink);
+    }
+
+    .video { margin-top: 24px; }
+    .video h3 { font-size: 16px; font-weight: 600; }
+    .video p { font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+    .frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--card);
+    }
+    .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
     footer {
       text-align: center;
@@ -156,62 +217,88 @@
       color: var(--muted);
       padding: 24px 0;
       border-top: 1px solid var(--line);
+      line-height: 1.8;
     }
     footer a { color: var(--muted); }
+
+    @media (max-width: 480px) {
+      header { padding-top: 48px; }
+      .btn-primary { padding: 20px 32px; }
+      .btn-row .btn { width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <main>
-    <div class="tag">Amateur Radio · Lincoln, NE · EN10</div>
-    <h1>K1KFX</h1>
-    <p class="lede">Radio direction finding in the field. Grab a receiver, find the fox.</p>
+  <div class="wrap">
+    <header>
+      <div class="tag">Amateur Radio · Lincoln, NE · EN10</div>
+      <h1>K1KFX</h1>
+      <p class="lede">Radio direction finding in the field. Grab a receiver, find the fox.</p>
+      <a class="btn btn-primary" href="https://k1kfx.com/hunt/dashboard.html">Join a Hunt →</a>
+    </header>
 
-    <section class="event" aria-labelledby="event-title">
-      <div class="event-when" id="event-title">Saturday, Oct 24 · 4:00 PM</div>
-      <div class="event-sub">Three foxes, one after another. Join each hunt by name.</div>
+    <main>
+      <section aria-labelledby="how">
+        <h2 id="how"><span class="num">1</span>How the hunt works</h2>
+        <p>Net control and the fox frequencies are given out at the start of each hunt. You record your own bearings on your phone with Fox Pursuit and radio them in to net control.</p>
+      </section>
 
-      <ul class="hunts">
-        <li class="hunt">
-          <div><div class="hunt-label">Fox 1</div><div class="hunt-name">24-1</div></div>
-          <button class="copy" data-name="24-1">Copy</button>
-        </li>
-        <li class="hunt">
-          <div><div class="hunt-label">Fox 2</div><div class="hunt-name">24-2</div></div>
-          <button class="copy" data-name="24-2">Copy</button>
-        </li>
-        <li class="hunt">
-          <div><div class="hunt-label">Fox 3</div><div class="hunt-name">24-3</div></div>
-          <button class="copy" data-name="24-3">Copy</button>
-        </li>
-      </ul>
+      <section aria-labelledby="steps">
+        <h2 id="steps"><span class="num">2</span>Your hunt, step by step</h2>
+        <ol class="steps">
+          <li>Tap <strong>Join a Hunt</strong>, sign in with your callsign, and <strong>create your own hunt</strong>. Don't join someone else's.</li>
+          <li>Turn on <strong>tracking</strong> and let your phone's <strong>GPS and compass</strong> fill in your location and bearing, so recording a bearing takes one tap.</li>
+          <li>Point at the signal and <strong>submit</strong>.</li>
+          <li><strong>Radio your location and bearing to net control</strong>, and say which fox if you can tell.</li>
+          <li>Keep chasing on your own map. When you find the fox, <strong>close that hunt and start a new one</strong> for the next fox.</li>
+        </ol>
 
-      <p class="how">
-        Tap <strong>Join a Hunt</strong>, sign in with your callsign, then enter the hunt name for the current fox.
-        Coordinate on the K0KKV repeater.
-      </p>
-    </section>
+        <div class="buddy">
+          <b>Optional: buddy up</b>
+          Hunting with a friend? Create one hunt and have your buddy join it by name. You'll share one map with both sets of bearings.
+        </div>
 
-    <a class="join" href="hunt/">Join a Hunt →</a>
-  </main>
-  <footer>
-    K1KFX · <a href="https://www.qrz.com/db/K1KFX">QRZ</a>
-  </footer>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="https://k1kfx.com/hunt/dashboard.html">Join a Hunt →</a>
+          <a class="btn btn-secondary" href="https://k1kfx.com/hunt/instructions.html">Instructions</a>
+        </div>
+      </section>
 
-  <script>
-    document.querySelectorAll('button.copy').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var name = btn.getAttribute('data-name');
-        var done = function () {
-          btn.textContent = 'Copied ✓';
-          setTimeout(function () { btn.textContent = 'Copy'; }, 1800);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(name).then(done, function () { btn.textContent = name; });
-        } else {
-          btn.textContent = name;
-        }
-      });
-    });
-  </script>
+      <section aria-labelledby="tips">
+        <h2 id="tips"><span class="num">3</span>Tips</h2>
+        <ul class="tips">
+          <li><strong>Name your hunt</strong> after yourself and the fox, such as <code>K1KFX-1</code>, so it doesn't collide with anyone else's.</li>
+          <li><strong>Fewer, good bearings beat many.</strong> About 10 or fewer keeps the map useful.</li>
+          <li><strong>Calibrate the compass</strong> by waving the phone in a figure-8, and stay away from cars and metal.</li>
+          <li><strong>Download an offline map</strong> on Wi-Fi before you leave. Tap the map to set the center, then Download.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="videos">
+        <h2 id="videos"><span class="num">4</span>Videos</h2>
+
+        <div class="video">
+          <h3>Fox Pursuit overview</h3>
+          <p>For everyone.</p>
+          <div class="frame">
+            <iframe src="https://www.youtube-nocookie.com/embed/AtWXc-IGKhY" title="Fox Pursuit overview" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>
+          </div>
+        </div>
+
+        <div class="video">
+          <h3>iPhone setup</h3>
+          <p>iPhone users only. Skip the activation steps; the club license covers you.</p>
+          <div class="frame">
+            <iframe src="https://www.youtube-nocookie.com/embed/puCFdVMl8XE?start=3" title="Fox Pursuit iPhone setup" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      K1KFX · <a href="https://www.qrz.com/db/K1KFX">QRZ</a><br>
+      Built on <a href="https://foxpursuit.com">Fox Pursuit</a> by Drew Lindsay, <a href="https://www.qrz.com/db/WA0MCS">WA0MCS</a>
+    </footer>
+  </div>
 </body>
 </html>
