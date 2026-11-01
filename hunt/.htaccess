@@ -1,0 +1,36 @@
+# ── Fox Hunt .htaccess ─────────────────────────────────────────
+# Default document + no directory listings (existing behavior).
+DirectoryIndex index.html
+Options -Indexes
+
+# Web app manifest (v72.6). Lets iOS open the home-screen icon at index.html
+# with the app's name and icon. Some hosts do not know the extension.
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
+# ── Service worker must never be served stale ──────────────────
+# The browser only notices a new app version when it sees a byte-changed
+# sw.js. If the host HTTP-caches sw.js, update detection can be missed and
+# testers get stuck on an old build. Force the browser to revalidate sw.js
+# on every request so new deploys are always picked up. Scoped to sw.js only;
+# everything else is left to the service worker's own cache logic.
+# Wrapped in IfModule so it is skipped harmlessly if mod_headers is absent.
+<IfModule mod_headers.c>
+  <FilesMatch "sw\.js$">
+    Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # The four files the host owns. These are edited AFTER the site is published -
+  # the site key at Section 8.2, and any later change of theme, map or content.
+  # If they are HTTP-cached, an edit can go unseen for as long as the cache lasts,
+  # and the commonest symptom is an app reporting no licence key immediately after
+  # one has just been installed. Never cache them.
+  <FilesMatch "^0-config-.*\.js$">
+    Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>

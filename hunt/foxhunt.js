@@ -381,7 +381,7 @@ function insertFooter() {
 }
 
 // ── Build version (shown in the top bar; bump on every build) ──
-const FH_BUILD = 'v2026.21t';
+const FH_BUILD = 'v2026.24t';
 try { console.info('Fox Pursuit ' + FH_BUILD); } catch(e){}
 
 // Stamp the version into any element with class "fh-build" (nav brand, hunt

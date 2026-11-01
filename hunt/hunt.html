@@ -4,6 +4,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <meta name="apple-mobile-web-app-title" content="Fox Pursuit"/>
+  <!-- v2026.24t/v2026.15s (C117): iOS 26+ shades the top ~58 px of a home-screen web app, blurring the top bar.
+       Mark iOS home-screen launches on iOS 26+ (CSS anchor positioning is new in Safari 26) so the bar can sit below it. -->
+  <script>if (navigator.standalone === true && window.CSS && CSS.supports('anchor-name: --a')) document.documentElement.classList.add('ios-standalone');</script>
   <title>Fox Pursuit — Map</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
   <link rel="manifest" href="manifest.webmanifest"/>
@@ -20,10 +23,11 @@
     /* ── Top nav strip (compact) ── */
     #hunt-topbar{
       background:var(--panel);border-bottom:1px solid var(--border);
-      display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.7rem;
+      display:flex;align-items:center;gap:0.35rem;padding:0.4rem 0.5rem;   /* v2026.23t (C111): tighter, so larger buttons still fit at 375 px */
       flex-shrink:0;z-index:200;
     }
     #hunt-topbar img{width:22px;height:22px;}
+    @media (orientation:portrait){ html.ios-standalone #hunt-topbar{padding-top:calc(0.4rem + 32px);} }   /* v2026.24t/v2026.15s (C117): band under iOS's shaded strip */
     /* The hunt name also appears at the top of the control panel (#gi-hunt-name).
        To avoid showing it twice, this copy is hidden whenever that panel is open
        and shown when it is not - see openSidebar()/closeSidebar()/applyLayout().
@@ -33,7 +37,7 @@
     #topbar-title{font-family:var(--mono);font-size:0.78rem;color:var(--accent);
       letter-spacing:0.08em;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     #topbar-title.hide-name{visibility:hidden;}
-    #topbar-timer{font-family:var(--mono);font-size:0.7rem;color:var(--accent);white-space:nowrap;}
+    #topbar-timer{font-family:var(--mono);font-size:0.8rem;color:var(--accent);white-space:nowrap;}   /* v2026.23t (C111): was 0.7rem */
     #topbar-timer.urgent{color:var(--error);animation:blink 1s infinite;}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
@@ -72,9 +76,12 @@
       border-radius:10px;padding:0.05rem 0.4rem;vertical-align:middle;
     }
     .queue-badge.show{display:inline-block;}
+    /* v2026.23t (C111): larger and in the theme's own colours. Was 0.62rem (about 10 px,
+       soft on iPhone) in a fixed grey that read 2:1 on the light theme. 0.72rem with the
+       tighter bar above fits a creator's four buttons on a 375 px iPhone screen. */
     .tb-btn{
-      background:none;border:1px solid var(--border);color:#b0b8cc;
-      font-family:var(--mono);font-size:0.62rem;padding:0.2rem 0.45rem;
+      background:none;border:1px solid var(--muted);color:var(--text);
+      font-family:var(--mono);font-size:0.72rem;padding:0.22rem 0.35rem;
       border-radius:3px;cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0;
     }
     .tb-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -755,6 +762,8 @@ const CROSS_EXTEND_PAST   = (typeof FOXHUNT_CONFIG !== 'undefined' && FOXHUNT_CO
 // submissions snapshot handler for the LOCAL user's own submission only.
 const COARSE_TOAST = (typeof FOXHUNT_CONFIG !== 'undefined' && FOXHUNT_CONFIG.estimateCoarseToast != null) ? FOXHUNT_CONFIG.estimateCoarseToast : 'Coarse but good — move closer and take a fresh reading to tighten';
 const WEAK_TOAST   = (typeof FOXHUNT_CONFIG !== 'undefined' && FOXHUNT_CONFIG.estimateWeakToast   != null) ? FOXHUNT_CONFIG.estimateWeakToast   : 'Weak fix — bearings nearly parallel; reposition to cross at a wider angle';
+// C115 (v2026.24t / v2026.15s): shown when the estimate lies behind a hunter, i.e. their bearing points away from it.
+const AWAY_TOAST   = (typeof FOXHUNT_CONFIG !== 'undefined' && FOXHUNT_CONFIG.estimateAwayToast   != null) ? FOXHUNT_CONFIG.estimateAwayToast   : 'One bearing points away from the estimated area — check for a reflection or a mis-entered bearing';
 
 // Submission colors for participants. These deliberately AVOID red and orange
 // tones, because the live "current location" marker and bearing line are red
@@ -829,6 +838,7 @@ const FOLLOW_SAFE_AREA_FRACTION = 0.70;
 let frameAnchorLat = null, frameAnchorLng = null;  // user location when that framing happened
 let probableLayers = [];                // ellipse + center marker layers
 let currentEstimateTier = 'none';       // 'good' | 'coarse' | 'weak' | 'none' — latest evaluated fix quality
+let currentPointsAway = false;          // C115: the latest estimate lies behind at least one hunter (more than AWAY_M)
 let lastTierToastMsg = '';              // last coarse/weak toast text + time — de-dupes the local+server snapshot pair
 let lastTierToastAt  = 0;
 let compassListener = null;
@@ -1377,6 +1387,7 @@ function applyDetailGate(){ refreshSizeLine(); }
 async function drawDetailArea(){
   if (detailRect){ try { map.removeLayer(detailRect); } catch(e){} detailRect = null; }
   detailBox = null;
+  if (await isLargeArchive()) return;   // v2026.23t (C109): detail everywhere - no search, no shading
   let b = null;
   try { b = await FoxMap.detailBounds(); } catch(e){ b = null; }
   if (!b) return;                       // plain extract / unknown: no constraint, no shading
@@ -2790,8 +2801,8 @@ function subscribeToSubmissions() {
       // currentEstimateTier to reflect the new bearing. The short same-message
       // window guards against any snapshot double-fire.
       if (myLat !== null && probableAreaOn &&
-          (currentEstimateTier === 'coarse' || currentEstimateTier === 'weak')) {
-        const msg = (currentEstimateTier === 'weak') ? WEAK_TOAST : COARSE_TOAST;
+          (currentPointsAway || currentEstimateTier === 'coarse' || currentEstimateTier === 'weak')) {
+        const msg = currentPointsAway ? AWAY_TOAST : (currentEstimateTier === 'weak') ? WEAK_TOAST : COARSE_TOAST;   // C115: the away note first
         const now = Date.now();
         if (msg && !(msg === lastTierToastMsg && (now - lastTierToastAt) < 1500)) {
           showToast(msg, 'warn');
@@ -3021,7 +3032,7 @@ async function submitReading() {
       // By now the snapshot for this write has folded the new bearing into the
       // probable area. If that left the fix coarse or weak, its guidance toast is
       // already up (and implies the submission landed) — don't overwrite it.
-      if (!(probableAreaOn && (currentEstimateTier === 'coarse' || currentEstimateTier === 'weak'))) {
+      if (!(probableAreaOn && (currentPointsAway || currentEstimateTier === 'coarse' || currentEstimateTier === 'weak'))) {
         showToast('✓ Reading submitted', 'ok');
       }
       setTimeout(() => setSubMsg('',''), 2500);
@@ -3323,6 +3334,7 @@ function updateProbableArea() {
   if (!probableAreaOn) return;
 
   const est = computeFoxEstimate();
+  currentPointsAway = false;
   if (!est) { currentEstimateTier = 'none'; return; }
   const { cx, cy, W, use, rays, toLL } = est;
 
@@ -3382,19 +3394,23 @@ function updateProbableArea() {
     const th=k/60*2*Math.PI, ex=a*Math.cos(th), ey=b*Math.sin(th);
     ringXY.push([cx+ex*Math.cos(ang)-ey*Math.sin(ang), cy+ex*Math.sin(ang)+ey*Math.cos(ang)]);
   }
-  // The fox is ahead of the receivers, so the area must not extend BEHIND them.
-  // Clip at the receiver line (perpendicular to the fox direction).
+  // The fox is ahead of the hunters, so the area must not extend BEHIND any of them.
+  // C115 (v2026.24t / v2026.15s): trim at EACH hunter, across the direction their
+  // bearing points. Until now one cut ran through the hunters' midpoint, so with
+  // hunters far apart the area could reach well behind one of them (Andrew's test,
+  // 2026-10-29: two bearings 2.2 km apart, area ~800 m behind the nearer hunter).
+  // A bearing whose hunter has the estimate BEHIND them (a reflection, a mis-entry,
+  // or the one good bearing among bad ones) is not used for trimming - it would cut
+  // away the spot the other bearings agree on. No bearing is ever removed: every
+  // one still counts in the estimate. Each cut keeps the estimate, so the area can
+  // never vanish. AWAY_M: an estimate within 100 m behind a hunter is GPS noise (C12).
   {
-    const rcx=rays.reduce((s,r)=>s+r.ox,0)/rays.length;
-    const rcy=rays.reduce((s,r)=>s+r.oy,0)/rays.length;
-    let fx=cx-rcx, fy=cy-rcy; let fl=Math.hypot(fx,fy);
-    // C12: when the estimate sits within 100 m of the receivers, the direction to
-    // it is mostly GPS noise; clip along the way the bearings point instead.
-    if (fl < 100) {
-      fx = rays.reduce((s,r)=>s+r.dx,0); fy = rays.reduce((s,r)=>s+r.dy,0);
-      fl = Math.hypot(fx,fy);
-    }
-    if (fl>1e-6){ fx/=fl; fy/=fl; ringXY = clipHalfPlane(ringXY, rcx, rcy, fx, fy); }
+    const AWAY_M = 100;
+    rays.forEach(r => {
+      const ahead = (cx - r.ox) * r.dx + (cy - r.oy) * r.dy;   // estimate's distance along this bearing (m)
+      if (ahead > 0) ringXY = clipHalfPlane(ringXY, r.ox, r.oy, r.dx, r.dy);
+      else if (ahead < -AWAY_M) currentPointsAway = true;
+    });
   }
   const ring = ringXY.map(([rx,ry])=>{ const ll=toLL(rx,ry); return [ll.lat,ll.lng]; });
 
@@ -3407,9 +3423,10 @@ function updateProbableArea() {
   const nB = rays.length;
   const note = weak   ? '<br><i>Weak fix — bearings nearly parallel</i>'
              : coarse ? '<br><i>Coarse fix — refine as you approach</i>' : '';
+  const awayNote = currentPointsAway ? '<br><i>One bearing points away from this area</i>' : '';   // C115
   const center = L.marker([c.lat,c.lng], { icon: areaCenterIcon(), interactive:true })
     .addTo(map)
-    .bindPopup(`<b>Estimated fox area (95%)</b><br>From ${nB} bearing${nB===1?'':'s'}<br>~${fmtDist(2*a)} × ${fmtDist(2*b)}${note}`);
+    .bindPopup(`<b>Estimated fox area (95%)</b><br>From ${nB} bearing${nB===1?'':'s'}<br>~${fmtDist(2*a)} × ${fmtDist(2*b)}${note}${awayNote}`);
   probableLayers.push(center);
 
   // Record the latest fix quality. This runs on EVERY device that draws the area
@@ -3519,9 +3536,19 @@ function mapAreaName(){
 // Use the detailed area - where max-zoom tiles actually exist, the same probe the
 // offline panel shades purple - and fall back to the header only if that probe
 // cannot decide (plain extract, or header unreadable).
+// v2026.23t (C109): a very large archive - over FoxMap.WHOLE_MAX, such as the
+// nationwide /demo map - is a plain extract with street detail everywhere.
+// Searching it for the edge of the detail downloads about 25 MB the first time
+// on each phone (about 3 minutes of "Loading map"), so skip the search and use
+// the header bounds. The regional maps (all well under WHOLE_MAX) are unchanged.
+async function isLargeArchive(){
+  try { return (await FoxMap.archiveSize()) > FoxMap.WHOLE_MAX; } catch (e) { return false; }
+}
 async function coverageBox(){
   let d = null;
-  try { d = await FoxMap.detailBounds(); } catch (e) { d = null; }
+  if (!(await isLargeArchive())) {
+    try { d = await FoxMap.detailBounds(); } catch (e) { d = null; }
+  }
   if (d) return { minLat: d.minLat, maxLat: d.maxLat, minLon: d.minLng, maxLon: d.maxLng };
   if (!FoxMap.archiveBounds) return null;
   try { return await FoxMap.archiveBounds(); } catch (e) { return null; }

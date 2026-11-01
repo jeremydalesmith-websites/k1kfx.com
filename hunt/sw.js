@@ -13,7 +13,7 @@
 //  auth/data responses would break real-time sync and login.
 // ============================================================
 
-const APP_CACHE  = 'foxpursuit-team-v2026.21'; // bump version to force app-shell refresh
+const APP_CACHE  = 'foxpursuit-team-v2026.24'; // bump version to force app-shell refresh
 
 // App-shell files (resolved relative to this SW's scope, e.g. /foxhunt/).
 const APP_SHELL = [
